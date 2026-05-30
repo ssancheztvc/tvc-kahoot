@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>TVC Kahoot — Jugar</title>
+<script src="/socket.io/socket.io.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --red:    #e21b3c;
+    --blue:   #1368ce;
+    --yellow: #d89e00;
+    --green:  #26890c;
+    --bg:     #1a1a2e;
+    --card:   #16213e;
+    --accent: #0f3460;
+  }
+  html, body {
+    height: 100%;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: white;
+  }
+  body {
+    display: flex; flex-direction: column;
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--accent);
+    border-bottom: 2px solid #e21b3c;
+    padding: 12px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  header .logo { font-size: 1.2rem; font-weight: 800; }
+  header .logo span { color: #e21b3c; }
+  #player-name-badge {
+    font-size: 0.85rem;
+    background: rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 4px 12px;
+    display: none;
+  }
+
+  .view { display: none; flex: 1; flex-direction: column; align-items: center; justify-content: center; padding: 24px; gap: 20px; }
+  .view.active { display: flex; }
+
+  /* ── JOIN ── */
+  #join-view { gap: 24px; }
+  .join-title { font-size: 2rem; font-weight: 900; text-align: center; }
+  .join-sub { opacity: 0.7; text-align: center; font-size: 1rem; }
+  #name-input {
+    width: 100%; max-width: 340px;
+    background: var(--card);
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 50px;
+    color: white;
+    font-size: 1.1rem; font-weight: 600;
+    padding: 14px 22px;
+    text-align: center;
+    outline: none;
+    transition: border-color .2s;
+  }
+  #name-input:focus { border-color: #7dd3fc; }
+  #name-input::placeholder { color: rgba(255,255,255,0.35); }
+  #join-btn {
+    width: 100%; max-width: 340px;
+    background: linear-gradient(135deg, #e21b3c, #b01530);
+    border: none; border-radius: 50px;
+    color: white; font-size: 1.2rem; font-weight: 800;
+    padding: 16px;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(226,27,60,0.4);
+    transition: transform .15s;
+  }
+  #join-btn:active { transform: scale(.97); }
+  #join-error { color: #ff6b6b; font-size: 0.9rem; min-height: 1.2em; text-align: center; }
+
+  /* ── WAITING ── */
+  #waiting-view { gap: 24px; text-align: center; }
+  .waiting-avatar {
+    width: 80px; height: 80px;
+    background: linear-gradient(135deg, var(--red), var(--blue));
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.2rem; font-weight: 900;
+  }
+  .waiting-name { font-size: 1.8rem; font-weight: 900; }
+  .waiting-msg { opacity: 0.7; font-size: 1rem; }
+  .pulse {
+    display: flex; gap: 8px; align-items: center; justify-content: center;
+    margin-top: 8px;
+  }
+  .dot {
+    width: 12px; height: 12px;
+    background: #7dd3fc;
+    border-radius: 50%;
+    animation: bounce 1.2s infinite;
+  }
+  .dot:nth-child(2) { animation-delay: .2s; }
+  .dot:nth-child(3) { animation-delay: .4s; }
+  @keyframes bounce {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+    40% { transform: scale(1); opacity: 1; }
+  }
+
+  /* ── QUESTION ── */
+  #question-view { justify-content: space-between; padding: 16px; gap: 12px; }
+  .q-header {
+    width: 100%; display: flex; align-items: center; justify-content: space-between;
+  }
+  .q-num { font-size: 0.9rem; opacity: 0.7; }
+  .timer-badge {
+    background: var(--card);
+    border-radius: 50px;
+    padding: 6px 16px;
+    font-size: 1.1rem; font-weight: 800;
+    color: #7dd3fc;
+    min-width: 60px; text-align: center;
+  }
+  .timer-badge.urgent { color: #e21b3c; animation: shake .3s; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
+  .progress-bar {
+    width: 100%; height: 6px;
+    background: rgba(255,255,255,0.15); border-radius: 3px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; background: #7dd3fc; border-radius: 3px;
+    transition: width .9s linear;
+  }
+  .question-text {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 18px;
+    font-size: 1.2rem; font-weight: 700;
+    text-align: center;
+    width: 100%;
+  }
+  .answers-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+    flex: 1;
+  }
+  .ans-btn {
+    border: none; border-radius: 12px;
+    color: white; font-size: 1rem; font-weight: 700;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 6px; padding: 10px 8px;
+    cursor: pointer;
+    min-height: 80px;
+    transition: transform .1s, opacity .15s;
+    text-align: center;
+    line-height: 1.3;
+  }
+  .ans-btn:active { transform: scale(.95); }
+  .ans-btn .shape { font-size: 1.6rem; }
+  .ans-btn:nth-child(1) { background: var(--red); }
+  .ans-btn:nth-child(2) { background: var(--blue); }
+  .ans-btn:nth-child(3) { background: var(--yellow); }
+  .ans-btn:nth-child(4) { background: var(--green); }
+  .ans-btn.selected { transform: scale(0.95); opacity: 0.7; }
+  .ans-btn:disabled { cursor: default; }
+
+  /* ── ANSWERED ── */
+  #answered-view { text-align: center; gap: 20px; }
+  .spinner {
+    width: 60px; height: 60px;
+    border: 5px solid rgba(255,255,255,0.15);
+    border-top-color: #7dd3fc;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #answered-view p { font-size: 1.2rem; font-weight: 700; }
+  #answered-view .sub { opacity: 0.6; font-size: 0.9rem; }
+
+  /* ── RESULT ── */
+  #result-view { text-align: center; gap: 20px; }
+  .result-icon { font-size: 5rem; animation: pop .4s ease; }
+  @keyframes pop { from { transform: scale(0) rotate(-20deg); } to { transform: scale(1) rotate(0deg); } }
+  .result-label { font-size: 2rem; font-weight: 900; }
+  .result-points { font-size: 3rem; font-weight: 900; color: #7dd3fc; }
+  .result-total { opacity: 0.7; font-size: 1rem; }
+  .result-correct-text {
+    background: rgba(38,137,12,0.2);
+    border: 1.5px solid var(--green);
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 0.95rem;
+    max-width: 300px;
+  }
+
+  /* ── LEADERBOARD ── */
+  #lb-view { gap: 16px; width: 100%; }
+  .lb-title { font-size: 1.8rem; font-weight: 900; text-align: center; }
+  .lb-list { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+  .lb-item {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--card); border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 1rem; font-weight: 700;
+  }
+  .lb-item.me { background: var(--accent); border: 1.5px solid #7dd3fc; }
+  .lb-rank { width: 32px; text-align: center; font-size: 1.2rem; }
+  .lb-name { flex: 1; }
+  .lb-score { color: #7dd3fc; font-weight: 800; }
+  .lb-item:nth-child(1) { background: linear-gradient(135deg, #7b5e00, #c9950a); }
+  .lb-item:nth-child(2) { background: linear-gradient(135deg, #3a3a3a, #666); }
+  .lb-item:nth-child(3) { background: linear-gradient(135deg, #5a2a00, #a05020); }
+
+  /* ── COUNTDOWN OVERLAY ── */
+  #countdown-overlay {
+    display: none; position: fixed; inset: 0; z-index: 999;
+    background: rgba(10,10,30,0.93);
+    align-items: center; justify-content: center;
+    flex-direction: column; gap: 8px;
+  }
+  #countdown-overlay.show { display: flex; }
+  #countdown-num {
+    font-size: 10rem; font-weight: 900; line-height: 1;
+    animation: countPop .4s ease;
+  }
+  #countdown-label { font-size: 1.1rem; opacity: 0.7; letter-spacing: 2px; }
+  @keyframes countPop {
+    from { transform: scale(1.6); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+  }
+
+  /* ── GAME OVER ── */
+  #gameover-view { text-align: center; gap: 20px; }
+  .go-title { font-size: 2.5rem; font-weight: 900; }
+  .go-rank { font-size: 1rem; opacity: 0.8; }
+  .go-score { font-size: 3rem; font-weight: 900; color: #7dd3fc; }
+  .go-medal { font-size: 4rem; animation: pop .4s ease; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">TVC<span>.</span>Kahoot</div>
+  <div id="player-name-badge"></div>
+</header>
+
+<!-- JOIN -->
+<div class="view active" id="join-view">
+  <div class="join-title">¡Únete al juego!</div>
+  <div class="join-sub">Escribe tu nombre para participar</div>
+  <input id="name-input" type="text" maxlength="24" placeholder="Tu nombre aquí…" autocomplete="off"
+    onkeydown="if(event.key==='Enter') joinGame()">
+  <button id="join-btn" onclick="joinGame()">¡Entrar!</button>
+  <div id="join-error"></div>
+</div>
+
+<!-- WAITING -->
+<div class="view" id="waiting-view">
+  <div class="waiting-avatar" id="waiting-avatar">?</div>
+  <div class="waiting-name" id="waiting-name"></div>
+  <div class="waiting-msg">Esperando que el juego inicie…</div>
+  <div class="pulse">
+    <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+  </div>
+</div>
+
+<!-- QUESTION -->
+<div class="view" id="question-view">
+  <div class="q-header">
+    <span class="q-num" id="q-num">1/10</span>
+    <div class="timer-badge" id="timer-badge">20</div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="p-fill" style="width:100%"></div></div>
+  <div class="question-text" id="q-text"></div>
+  <div class="answers-grid" id="answers-grid"></div>
+</div>
+
+<!-- ANSWERED -->
+<div class="view" id="answered-view">
+  <div class="spinner"></div>
+  <p>¡Respuesta enviada!</p>
+  <p class="sub">Esperando resultados…</p>
+</div>
+
+<!-- RESULT -->
+<div class="view" id="result-view">
+  <div class="result-icon" id="result-icon"></div>
+  <div class="result-label" id="result-label"></div>
+  <div class="result-points" id="result-points"></div>
+  <div class="result-total" id="result-total"></div>
+  <div class="result-correct-text" id="result-correct-text"></div>
+</div>
+
+<!-- LEADERBOARD -->
+<div class="view" id="lb-view">
+  <div class="lb-title">🏆 Top jugadores</div>
+  <div class="lb-list" id="lb-list"></div>
+</div>
+
+<!-- COUNTDOWN OVERLAY -->
+<div id="countdown-overlay">
+  <div id="countdown-num">4</div>
+  <div id="countdown-label">PREPÁRENSE</div>
+</div>
+
+<!-- GAME OVER -->
+<div class="view" id="gameover-view">
+  <div class="go-medal" id="go-medal">🎉</div>
+  <div class="go-title">¡Fin del juego!</div>
+  <div class="go-rank" id="go-rank"></div>
+  <div class="go-score" id="go-score"></div>
+</div>
+
+<script>
+const socket = io();
+const SHAPES = ['▲', '◆', '●', '■'];
+let myName = '';
+let myScore = 0;
+let totalTime = 20;
+
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function joinGame() {
+  const name = document.getElementById('name-input').value.trim();
+  if (!name) { showError('Escribe tu nombre.'); return; }
+  socket.emit('join-game', name);
+}
+
+function showError(msg) {
+  document.getElementById('join-error').textContent = msg;
+  setTimeout(() => document.getElementById('join-error').textContent = '', 3000);
+}
+
+// ── EVENTS ──
+socket.on('joined', ({ name }) => {
+  myName = name;
+  document.getElementById('waiting-name').textContent = name;
+  document.getElementById('waiting-avatar').textContent = name.charAt(0).toUpperCase();
+  document.getElementById('player-name-badge').textContent = name;
+  document.getElementById('player-name-badge').style.display = 'block';
+  showView('waiting-view');
+});
+
+socket.on('join-error', (msg) => { showError(msg); });
+
+socket.on('countdown', ({ count }) => {
+  const overlay = document.getElementById('countdown-overlay');
+  const num = document.getElementById('countdown-num');
+  const lbl = document.getElementById('countdown-label');
+  overlay.classList.add('show');
+  if (count === 0) {
+    num.textContent = '¡YA!';
+    num.style.color = '#26890c';
+    lbl.textContent = '';
+  } else {
+    num.textContent = count;
+    num.style.color = count <= 2 ? '#e21b3c' : '#7dd3fc';
+    lbl.textContent = 'PREPÁRENSE';
+    num.style.animation = 'none';
+    num.offsetHeight;
+    num.style.animation = 'countPop .4s ease';
+  }
+  if (count === 0) {
+    setTimeout(() => { overlay.classList.remove('show'); }, 800);
+  }
+});
+
+socket.on('waiting-next', () => {
+  document.getElementById('waiting-msg') && (document.getElementById('waiting-msg').textContent = 'Espera la siguiente pregunta…');
+  showView('waiting-view');
+});
+
+socket.on('question', (q) => {
+  totalTime = q.time || 20;
+  document.getElementById('q-num').textContent = `${q.index + 1} / ${q.total}`;
+  document.getElementById('q-text').textContent = q.text;
+  document.getElementById('timer-badge').textContent = q.time;
+  document.getElementById('timer-badge').className = 'timer-badge';
+  document.getElementById('p-fill').style.width = '100%';
+
+  const grid = document.getElementById('answers-grid');
+  grid.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'ans-btn';
+    btn.innerHTML = `<span class="shape">${SHAPES[i]}</span>${opt}`;
+    btn.onclick = () => submitAnswer(i, btn);
+    grid.appendChild(btn);
+  });
+
+  showView('question-view');
+});
+
+socket.on('timer', ({ timeLeft, total }) => {
+  const badge = document.getElementById('timer-badge');
+  badge.textContent = timeLeft;
+  badge.className = 'timer-badge' + (timeLeft <= 5 ? ' urgent' : '');
+  document.getElementById('p-fill').style.width = ((timeLeft / (total || totalTime)) * 100) + '%';
+});
+
+socket.on('answer-received', () => {
+  showView('answered-view');
+});
+
+socket.on('answer-result', ({ correct, points, correctAnswer, totalScore, noAnswer }) => {
+  myScore = totalScore;
+  document.getElementById('result-icon').textContent = correct ? '✅' : (noAnswer ? '⏱️' : '❌');
+  document.getElementById('result-label').textContent = correct ? '¡Correcto!' : (noAnswer ? 'Sin respuesta' : '¡Incorrecto!');
+  document.getElementById('result-points').textContent = correct ? `+${points.toLocaleString()} pts` : '';
+  document.getElementById('result-total').textContent = `Total: ${totalScore.toLocaleString()} pts`;
+
+  const correctText = document.querySelectorAll('.ans-btn')[correctAnswer];
+  if (correctText) {
+    document.getElementById('result-correct-text').textContent =
+      'Respuesta correcta: ' + correctText.textContent.replace(SHAPES[correctAnswer], '').trim();
+  }
+
+  showView('result-view');
+});
+
+socket.on('leaderboard-update', (lb) => {
+  const medals = ['🥇','🥈','🥉'];
+  const list = document.getElementById('lb-list');
+  list.innerHTML = lb.map((p, i) => `
+    <div class="lb-item${p.name === myName ? ' me' : ''}">
+      <span class="lb-rank">${medals[i] || (i + 1)}</span>
+      <span class="lb-name">${p.name}${p.name === myName ? ' 👈' : ''}</span>
+      <span class="lb-score">${p.score.toLocaleString()}</span>
+    </div>`).join('');
+  setTimeout(() => showView('lb-view'), 800);
+});
+
+socket.on('game-over', ({ leaderboard }) => {
+  const myRank = leaderboard.findIndex(p => p.name === myName) + 1;
+  const medals = ['🥇','🥈','🥉'];
+  document.getElementById('go-medal').textContent = medals[myRank - 1] || '🎉';
+  document.getElementById('go-rank').textContent = myRank
+    ? `Quedaste en el lugar #${myRank} de ${leaderboard.length}`
+    : 'Gracias por participar';
+  document.getElementById('go-score').textContent = `${myScore.toLocaleString()} pts`;
+  setTimeout(() => showView('gameover-view'), 1200);
+});
+
+socket.on('game-reset', () => {
+  myName = '';
+  myScore = 0;
+  document.getElementById('player-name-badge').style.display = 'none';
+  document.getElementById('name-input').value = '';
+  showView('join-view');
+});
+
+function submitAnswer(index, btn) {
+  // Disable all buttons
+  document.querySelectorAll('.ans-btn').forEach(b => {
+    b.disabled = true;
+    b.classList.add('selected');
+  });
+  btn.classList.remove('selected');
+  btn.style.transform = 'scale(1.05)';
+  socket.emit('submit-answer', index);
+}
+</script>
+</body>
+</html>

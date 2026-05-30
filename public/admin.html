@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TVC Kahoot — Admin</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0f172a; --card: #1e293b; --border: #334155;
+  --accent: #3b82f6; --red: #ef4444; --green: #22c55e;
+  --yellow: #eab308; --text: #f1f5f9; --muted: #94a3b8;
+}
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* HEADER */
+header {
+  background: var(--card); border-bottom: 1px solid var(--border);
+  padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+}
+header .logo { font-size: 1.2rem; font-weight: 800; }
+header .logo span { color: #e21b3c; }
+.header-actions { display: flex; gap: 10px; align-items: center; }
+.badge-count {
+  background: var(--accent); color: white;
+  border-radius: 20px; padding: 4px 12px; font-size: 0.85rem; font-weight: 700;
+}
+
+/* LAYOUT */
+.container { max-width: 860px; margin: 0 auto; padding: 28px 20px; display: flex; flex-direction: column; gap: 20px; }
+
+/* NEW QUESTION FORM */
+.form-card {
+  background: var(--card); border-radius: 16px; border: 1px solid var(--border);
+  padding: 24px; display: flex; flex-direction: column; gap: 16px;
+}
+.form-card h2 { font-size: 1.1rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label { font-size: 0.85rem; font-weight: 600; color: var(--muted); }
+input[type=text], input[type=number], textarea {
+  background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: 8px; color: var(--text); font-size: 0.95rem;
+  padding: 10px 14px; outline: none; width: 100%;
+  transition: border-color .15s;
+}
+input:focus, textarea:focus { border-color: var(--accent); }
+textarea { resize: vertical; min-height: 60px; font-family: inherit; }
+.options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.opt-row { display: flex; align-items: center; gap: 8px; }
+.opt-badge {
+  width: 28px; height: 28px; border-radius: 6px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.9rem; font-weight: 800;
+}
+.opt-badge.r { background: #e21b3c; }
+.opt-badge.b { background: #1368ce; }
+.opt-badge.y { background: #d89e00; }
+.opt-badge.g { background: #26890c; }
+.correct-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.radio-btn {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: 8px; padding: 8px 14px; cursor: pointer;
+  font-size: 0.9rem; font-weight: 600; transition: border-color .15s, background .15s;
+  user-select: none;
+}
+.radio-btn input { display: none; }
+.radio-btn.selected { border-color: var(--green); background: rgba(34,197,94,0.12); color: var(--green); }
+.form-footer { display: flex; gap: 10px; justify-content: flex-end; }
+
+/* QUESTION LIST */
+.section-header { display: flex; align-items: center; justify-content: space-between; }
+.section-header h2 { font-size: 1.1rem; font-weight: 700; }
+.q-list { display: flex; flex-direction: column; gap: 10px; }
+.q-item {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 16px 18px;
+  display: flex; align-items: flex-start; gap: 14px;
+  transition: border-color .15s;
+}
+.q-item:hover { border-color: var(--accent); }
+.q-num {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: var(--accent); display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 0.95rem; flex-shrink: 0; margin-top: 2px;
+}
+.q-body { flex: 1; min-width: 0; }
+.q-text { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+.q-opts { display: flex; flex-wrap: wrap; gap: 6px; }
+.q-opt {
+  font-size: 0.8rem; padding: 3px 10px; border-radius: 20px;
+  background: rgba(255,255,255,0.07); border: 1px solid var(--border);
+}
+.q-opt.correct { background: rgba(34,197,94,0.18); border-color: var(--green); color: var(--green); font-weight: 700; }
+.q-meta { font-size: 0.78rem; color: var(--muted); margin-top: 6px; }
+.q-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.drag-handle {
+  cursor: grab; color: var(--muted); font-size: 1.2rem; padding: 4px;
+  flex-shrink: 0; margin-top: 4px;
+}
+.drag-handle:active { cursor: grabbing; }
+
+/* BUTTONS */
+.btn {
+  border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 700;
+  padding: 9px 18px; cursor: pointer; transition: opacity .15s, transform .1s;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.btn:hover { opacity: 0.88; }
+.btn:active { transform: scale(.97); }
+.btn-primary { background: var(--accent); color: white; }
+.btn-danger  { background: var(--red); color: white; }
+.btn-ghost   { background: rgba(255,255,255,0.08); color: var(--text); }
+.btn-sm { padding: 6px 12px; font-size: 0.82rem; border-radius: 6px; }
+.btn-icon { padding: 7px 10px; }
+
+/* MODAL */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  display: none; align-items: center; justify-content: center;
+  z-index: 100; padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 18px; padding: 28px; width: 100%; max-width: 560px;
+  max-height: 90vh; overflow-y: auto;
+}
+.modal h2 { font-size: 1.2rem; font-weight: 800; margin-bottom: 20px; }
+.modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+/* TOAST */
+.toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--green); color: white;
+  border-radius: 10px; padding: 12px 20px;
+  font-weight: 700; font-size: 0.9rem;
+  opacity: 0; transform: translateY(12px);
+  transition: opacity .25s, transform .25s;
+  z-index: 200; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.err { background: var(--red); }
+
+/* DRAG */
+.q-item.dragging { opacity: 0.4; }
+.q-item.drag-over { border-color: var(--accent); background: rgba(59,130,246,0.08); }
+
+/* EMPTY */
+.empty { text-align: center; color: var(--muted); padding: 48px 20px; font-size: 1rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">TVC<span>.</span>Kahoot <span style="font-size:.9rem;color:var(--muted);font-weight:400">/ Admin</span></div>
+  <div class="header-actions">
+    <span class="badge-count" id="total-badge">0 preguntas</span>
+    <a href="/" class="btn btn-ghost btn-sm">🎮 Ir al Host</a>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- ADD FORM -->
+  <div class="form-card">
+    <h2>➕ Nueva pregunta</h2>
+    <div class="form-group">
+      <label>Pregunta</label>
+      <textarea id="new-text" placeholder="Escribe la pregunta aquí…" rows="2"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Opciones de respuesta</label>
+      <div class="options-grid">
+        <div class="opt-row"><div class="opt-badge r">▲</div><input type="text" id="opt-0" placeholder="Opción A"></div>
+        <div class="opt-row"><div class="opt-badge b">◆</div><input type="text" id="opt-1" placeholder="Opción B"></div>
+        <div class="opt-row"><div class="opt-badge y">●</div><input type="text" id="opt-2" placeholder="Opción C"></div>
+        <div class="opt-row"><div class="opt-badge g">■</div><input type="text" id="opt-3" placeholder="Opción D"></div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Respuesta correcta</label>
+      <div class="correct-row" id="correct-row">
+        <label class="radio-btn" data-val="0"><input type="radio" name="nc" value="0">▲ A</label>
+        <label class="radio-btn" data-val="1"><input type="radio" name="nc" value="1">◆ B</label>
+        <label class="radio-btn" data-val="2"><input type="radio" name="nc" value="2">● C</label>
+        <label class="radio-btn" data-val="3"><input type="radio" name="nc" value="3">■ D</label>
+      </div>
+    </div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      <div class="form-group" style="flex:1;min-width:120px">
+        <label>Tiempo (segundos)</label>
+        <input type="number" id="new-time" value="20" min="5" max="120">
+      </div>
+      <div class="form-group" style="flex:3;min-width:200px">
+        <label>Explicación (opcional, se muestra al revelar)</label>
+        <input type="text" id="new-explanation" placeholder="Dato extra o fuente…">
+      </div>
+    </div>
+    <div class="form-footer">
+      <button class="btn btn-primary" onclick="addQuestion()">Agregar pregunta</button>
+    </div>
+  </div>
+
+  <!-- LIST -->
+  <div class="section-header">
+    <h2>📋 Preguntas del juego</h2>
+    <span style="font-size:0.85rem;color:var(--muted)">Arrastra para reordenar</span>
+  </div>
+  <div class="q-list" id="q-list"></div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <h2>✏️ Editar pregunta</h2>
+    <input type="hidden" id="edit-index">
+    <div class="form-group" style="margin-bottom:14px">
+      <label>Pregunta</label>
+      <textarea id="edit-text" rows="2"></textarea>
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label>Opciones</label>
+      <div class="options-grid">
+        <div class="opt-row"><div class="opt-badge r">▲</div><input type="text" id="e-opt-0"></div>
+        <div class="opt-row"><div class="opt-badge b">◆</div><input type="text" id="e-opt-1"></div>
+        <div class="opt-row"><div class="opt-badge y">●</div><input type="text" id="e-opt-2"></div>
+        <div class="opt-row"><div class="opt-badge g">■</div><input type="text" id="e-opt-3"></div>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label>Respuesta correcta</label>
+      <div class="correct-row" id="edit-correct-row">
+        <label class="radio-btn" data-val="0"><input type="radio" name="ec" value="0">▲ A</label>
+        <label class="radio-btn" data-val="1"><input type="radio" name="ec" value="1">◆ B</label>
+        <label class="radio-btn" data-val="2"><input type="radio" name="ec" value="2">● C</label>
+        <label class="radio-btn" data-val="3"><input type="radio" name="ec" value="3">■ D</label>
+      </div>
+    </div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      <div class="form-group" style="flex:1;min-width:100px">
+        <label>Tiempo (seg)</label>
+        <input type="number" id="edit-time" min="5" max="120">
+      </div>
+      <div class="form-group" style="flex:3;min-width:180px">
+        <label>Explicación</label>
+        <input type="text" id="edit-explanation">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEdit()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let questions = [];
+let selectedCorrect = 0;
+let editSelectedCorrect = 0;
+let dragSrc = null;
+
+// ── RADIO BUTTONS ──
+function initRadios(containerId, varSetter) {
+  document.querySelectorAll(`#${containerId} .radio-btn`).forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll(`#${containerId} .radio-btn`).forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      varSetter(parseInt(btn.dataset.val));
+    });
+  });
+}
+initRadios('correct-row', v => selectedCorrect = v);
+initRadios('edit-correct-row', v => editSelectedCorrect = v);
+
+function setRadio(containerId, val) {
+  document.querySelectorAll(`#${containerId} .radio-btn`).forEach(btn => {
+    btn.classList.toggle('selected', parseInt(btn.dataset.val) === val);
+  });
+}
+
+// ── LOAD ──
+async function loadQuestions() {
+  const res = await fetch('/api/questions');
+  questions = await res.json();
+  renderList();
+}
+
+function renderList() {
+  const list = document.getElementById('q-list');
+  document.getElementById('total-badge').textContent = questions.length + ' preguntas';
+  const SHAPES = ['▲','◆','●','■'];
+  const COLORS = ['#e21b3c','#1368ce','#d89e00','#26890c'];
+
+  if (!questions.length) {
+    list.innerHTML = '<div class="empty">No hay preguntas aún. ¡Agrega la primera!</div>';
+    return;
+  }
+
+  list.innerHTML = questions.map((q, i) => `
+    <div class="q-item" draggable="true" data-i="${i}"
+      ondragstart="dragStart(event,${i})" ondragover="dragOver(event,${i})"
+      ondrop="drop(event,${i})" ondragleave="dragLeave(event)">
+      <span class="drag-handle" title="Arrastra para reordenar">⠿</span>
+      <div class="q-num">${i + 1}</div>
+      <div class="q-body">
+        <div class="q-text">${esc(q.text)}</div>
+        <div class="q-opts">
+          ${q.options.map((opt, j) => `
+            <span class="q-opt${j === q.correct ? ' correct' : ''}"
+              style="${j === q.correct ? '' : `color:${COLORS[j]}`}">
+              ${SHAPES[j]} ${esc(opt)}
+            </span>`).join('')}
+        </div>
+        <div class="q-meta">⏱ ${q.time || 20}s${q.explanation ? '  ·  💬 ' + esc(q.explanation) : ''}</div>
+      </div>
+      <div class="q-actions">
+        <button class="btn btn-ghost btn-sm btn-icon" onclick="openEdit(${i})" title="Editar">✏️</button>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="deleteQ(${i})" title="Eliminar">🗑</button>
+      </div>
+    </div>`).join('');
+}
+
+// ── ADD ──
+async function addQuestion() {
+  const text = document.getElementById('new-text').value.trim();
+  const options = [0,1,2,3].map(i => document.getElementById(`opt-${i}`).value.trim());
+  const time = parseInt(document.getElementById('new-time').value) || 20;
+  const explanation = document.getElementById('new-explanation').value.trim();
+
+  if (!text) { toast('Escribe la pregunta', true); return; }
+  if (options.some(o => !o)) { toast('Completa las 4 opciones', true); return; }
+
+  const res = await fetch('/api/questions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, options, correct: selectedCorrect, time, explanation }),
+  });
+  if (res.ok) {
+    // Reset form
+    document.getElementById('new-text').value = '';
+    [0,1,2,3].forEach(i => document.getElementById(`opt-${i}`).value = '');
+    document.getElementById('new-explanation').value = '';
+    document.getElementById('new-time').value = '20';
+    selectedCorrect = 0;
+    setRadio('correct-row', 0);
+    await loadQuestions();
+    toast('Pregunta agregada ✓');
+  }
+}
+
+// ── EDIT ──
+function openEdit(i) {
+  const q = questions[i];
+  document.getElementById('edit-index').value = i;
+  document.getElementById('edit-text').value = q.text;
+  [0,1,2,3].forEach(j => document.getElementById(`e-opt-${j}`).value = q.options[j] || '');
+  document.getElementById('edit-time').value = q.time || 20;
+  document.getElementById('edit-explanation').value = q.explanation || '';
+  editSelectedCorrect = q.correct;
+  setRadio('edit-correct-row', q.correct);
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('edit-modal').classList.remove('open');
+}
+
+async function saveEdit() {
+  const i = parseInt(document.getElementById('edit-index').value);
+  const text = document.getElementById('edit-text').value.trim();
+  const options = [0,1,2,3].map(j => document.getElementById(`e-opt-${j}`).value.trim());
+  const time = parseInt(document.getElementById('edit-time').value) || 20;
+  const explanation = document.getElementById('edit-explanation').value.trim();
+
+  if (!text || options.some(o => !o)) { toast('Completa todos los campos', true); return; }
+
+  const res = await fetch(`/api/questions/${i}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, options, correct: editSelectedCorrect, time, explanation }),
+  });
+  if (res.ok) {
+    closeModal();
+    await loadQuestions();
+    toast('Pregunta guardada ✓');
+  }
+}
+
+// ── DELETE ──
+async function deleteQ(i) {
+  if (!confirm(`¿Eliminar la pregunta "${questions[i].text.slice(0,50)}…"?`)) return;
+  const res = await fetch(`/api/questions/${i}`, { method: 'DELETE' });
+  if (res.ok) { await loadQuestions(); toast('Pregunta eliminada'); }
+}
+
+// ── DRAG & DROP REORDER ──
+function dragStart(e, i) {
+  dragSrc = i;
+  setTimeout(() => e.target.closest('.q-item').classList.add('dragging'), 0);
+  e.dataTransfer.effectAllowed = 'move';
+}
+function dragOver(e, i) {
+  e.preventDefault();
+  if (i !== dragSrc) e.target.closest('.q-item').classList.add('drag-over');
+}
+function dragLeave(e) {
+  e.target.closest?.('.q-item')?.classList.remove('drag-over');
+}
+async function drop(e, to) {
+  e.preventDefault();
+  document.querySelectorAll('.q-item').forEach(el => { el.classList.remove('dragging','drag-over'); });
+  if (dragSrc === null || dragSrc === to) return;
+  await fetch('/api/questions/reorder', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from: dragSrc, to }),
+  });
+  dragSrc = null;
+  await loadQuestions();
+}
+
+// ── TOAST ──
+function toast(msg, err = false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (err ? ' err' : '');
+  setTimeout(() => el.className = 'toast', 2500);
+}
+
+// ── UTILS ──
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// Close modal on overlay click
+document.getElementById('edit-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeModal();
+});
+
+// Enter key on new form
+document.getElementById('new-text').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addQuestion(); }
+});
+
+loadQuestions();
+</script>
+</body>
+</html>

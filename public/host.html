@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TVC Kahoot — Host</title>
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --red:    #e21b3c;
+    --blue:   #1368ce;
+    --yellow: #d89e00;
+    --green:  #26890c;
+    --bg:     #1a1a2e;
+    --card:   #16213e;
+    --accent: #0f3460;
+    --text:   #ffffff;
+  }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 24px;
+    background: var(--accent);
+    border-bottom: 2px solid #e21b3c;
+  }
+  header .logo { font-size: 1.4rem; font-weight: 800; letter-spacing: 1px; }
+  header .logo span { color: #e21b3c; }
+  header .badge {
+    background: rgba(255,255,255,0.15);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  /* ── VIEWS ── */
+  .view { display: none; flex: 1; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
+  .view.active { display: flex; }
+
+  /* ── LOBBY ── */
+  #lobby { gap: 32px; }
+  #lobby .top { display: flex; gap: 48px; align-items: flex-start; justify-content: center; flex-wrap: wrap; }
+  .qr-box {
+    background: white;
+    border-radius: 16px;
+    padding: 16px;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+  }
+  .qr-box p { color: #333; font-size: 0.8rem; font-weight: 700; text-align: center; }
+  #qrcode { width: 180px; height: 180px; }
+  .join-url {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #7dd3fc;
+    letter-spacing: 0.5px;
+    text-align: center;
+  }
+  .lobby-info { display: flex; flex-direction: column; gap: 16px; }
+  .player-counter {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 24px 40px;
+    text-align: center;
+  }
+  .player-counter .num { font-size: 5rem; font-weight: 900; color: #7dd3fc; line-height: 1; }
+  .player-counter .lbl { font-size: 1rem; opacity: 0.7; margin-top: 4px; }
+  #player-list {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 16px;
+    min-width: 280px; max-width: 380px;
+    max-height: 220px; overflow-y: auto;
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .player-chip {
+    background: var(--accent);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 0.85rem;
+    animation: pop .3s ease;
+  }
+  @keyframes pop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  #start-btn {
+    background: linear-gradient(135deg, #e21b3c, #b01530);
+    border: none; border-radius: 50px;
+    color: white; font-size: 1.4rem; font-weight: 800;
+    padding: 18px 60px; cursor: pointer;
+    box-shadow: 0 6px 24px rgba(226,27,60,0.4);
+    transition: transform .15s, box-shadow .15s;
+  }
+  #start-btn:hover { transform: scale(1.04); box-shadow: 0 8px 30px rgba(226,27,60,0.5); }
+  #start-btn:active { transform: scale(.98); }
+  #start-btn:disabled { opacity: 0.5; cursor: default; transform: none; }
+
+  /* ── QUESTION VIEW ── */
+  #question-view { gap: 24px; width: 100%; max-width: 900px; margin: 0 auto; }
+  .q-meta {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%;
+  }
+  .q-counter { font-size: 1rem; opacity: 0.7; }
+  .q-answered { font-size: 1rem; opacity: 0.8; }
+  .timer-ring {
+    position: relative; width: 80px; height: 80px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .timer-ring svg { position: absolute; top: 0; left: 0; transform: rotate(-90deg); }
+  .timer-ring circle { transition: stroke-dashoffset .9s linear; }
+  #timer-num { font-size: 2rem; font-weight: 900; }
+  .q-text {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 28px 36px;
+    font-size: 1.8rem; font-weight: 700;
+    text-align: center;
+    width: 100%;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+  .answers-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    width: 100%;
+  }
+  .ans-card {
+    border-radius: 14px;
+    padding: 20px 24px;
+    font-size: 1.3rem; font-weight: 700;
+    display: flex; align-items: center; gap: 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .ans-card .shape { font-size: 1.8rem; }
+  .ans-card:nth-child(1) { background: var(--red); }
+  .ans-card:nth-child(2) { background: var(--blue); }
+  .ans-card:nth-child(3) { background: var(--yellow); }
+  .ans-card:nth-child(4) { background: var(--green); }
+  .ans-card.correct { outline: 4px solid white; transform: scale(1.02); }
+  .progress-bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: #7dd3fc;
+    border-radius: 4px;
+    transition: width .9s linear;
+  }
+
+  /* ── REVEAL VIEW ── */
+  #reveal-view { gap: 20px; width: 100%; max-width: 900px; margin: 0 auto; }
+  .reveal-title { font-size: 1.5rem; font-weight: 800; text-align: center; }
+  .reveal-subtitle { font-size: 1rem; opacity: 0.7; text-align: center; }
+  .bar-chart {
+    display: flex; align-items: flex-end; gap: 16px;
+    height: 200px; width: 100%;
+    background: var(--card); border-radius: 16px;
+    padding: 20px 24px 16px;
+  }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .bar-col .bar {
+    width: 100%; border-radius: 8px 8px 0 0;
+    min-height: 4px; transition: height .6s ease;
+    display: flex; align-items: flex-end; justify-content: center;
+    padding-bottom: 4px; font-weight: 700; font-size: 0.9rem;
+  }
+  .bar-col:nth-child(1) .bar { background: var(--red); }
+  .bar-col:nth-child(2) .bar { background: var(--blue); }
+  .bar-col:nth-child(3) .bar { background: var(--yellow); }
+  .bar-col:nth-child(4) .bar { background: var(--green); }
+  .bar-col .bar-label { font-size: 0.8rem; opacity: 0.8; text-align: center; }
+  .correct-badge {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: rgba(38,137,12,0.25);
+    border: 2px solid var(--green);
+    border-radius: 12px;
+    padding: 14px 24px;
+    font-size: 1.2rem; font-weight: 700;
+    text-align: center;
+  }
+  .explanation { opacity: 0.75; font-style: italic; text-align: center; font-size: 0.95rem; }
+
+  /* ── LEADERBOARD ── */
+  #leaderboard-view { gap: 20px; width: 100%; max-width: 600px; margin: 0 auto; }
+  .lb-title { font-size: 2rem; font-weight: 900; text-align: center; }
+  .lb-list { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+  .lb-item {
+    display: flex; align-items: center; gap: 16px;
+    background: var(--card); border-radius: 14px;
+    padding: 14px 20px;
+    font-size: 1.1rem; font-weight: 700;
+    animation: slideIn .4s ease;
+  }
+  @keyframes slideIn { from { transform: translateX(-40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  .lb-rank { font-size: 1.6rem; width: 40px; text-align: center; }
+  .lb-name { flex: 1; }
+  .lb-score { color: #7dd3fc; font-size: 1.2rem; }
+  .lb-item:nth-child(1) { background: linear-gradient(135deg, #7b5e00, #c9950a); }
+  .lb-item:nth-child(2) { background: linear-gradient(135deg, #3a3a3a, #666); }
+  .lb-item:nth-child(3) { background: linear-gradient(135deg, #5a2a00, #a05020); }
+
+  /* ── GAME OVER ── */
+  #gameover-view { gap: 24px; max-width: 600px; width: 100%; margin: 0 auto; }
+  .gameover-title { font-size: 3rem; font-weight: 900; text-align: center; }
+  .gameover-sub { font-size: 1.2rem; opacity: 0.8; text-align: center; }
+  .podium { display: flex; align-items: flex-end; justify-content: center; gap: 12px; margin: 8px 0; }
+  .podium-item { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .podium-name { font-size: 0.85rem; font-weight: 700; text-align: center; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .podium-score { font-size: 0.75rem; color: #7dd3fc; }
+  .podium-block { width: 90px; border-radius: 8px 8px 0 0; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
+  .podium-item:nth-child(1) .podium-block { height: 90px; background: var(--blue); } /* 2nd */
+  .podium-item:nth-child(2) .podium-block { height: 120px; background: linear-gradient(135deg, #7b5e00, #c9950a); } /* 1st */
+  .podium-item:nth-child(3) .podium-block { height: 70px; background: linear-gradient(135deg, #5a2a00, #a05020); } /* 3rd */
+
+  /* ── HOST CONTROL BAR ── */
+  #host-controls {
+    position: fixed; bottom: 20px; right: 20px;
+    display: flex; gap: 10px; z-index: 50;
+  }
+  #host-controls .hbtn {
+    border: none; border-radius: 50px;
+    font-size: 0.9rem; font-weight: 800;
+    padding: 12px 20px; cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    transition: transform .15s, opacity .15s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  #host-controls .hbtn:hover { transform: scale(1.05); }
+  #host-controls .hbtn:active { transform: scale(.97); }
+  #btn-skip { background: #d89e00; color: white; display: none; }
+  #btn-next-ctrl { background: #1368ce; color: white; display: none; }
+  #btn-reset-ctrl { background: rgba(226,27,60,0.85); color: white; display: none; }
+
+  /* ── COUNTDOWN OVERLAY ── */
+  #countdown-overlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 999;
+    background: rgba(10,10,30,0.92);
+    align-items: center; justify-content: center;
+    flex-direction: column; gap: 16px;
+  }
+  #countdown-overlay.show { display: flex; }
+  #countdown-num {
+    font-size: 14rem; font-weight: 900; line-height: 1;
+    animation: countPop .4s ease;
+  }
+  #countdown-label { font-size: 1.5rem; opacity: 0.7; letter-spacing: 2px; }
+  @keyframes countPop {
+    from { transform: scale(1.6); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+  }
+
+  /* ── BUTTONS ── */
+  .btn {
+    border: none; border-radius: 50px;
+    color: white; font-size: 1.1rem; font-weight: 700;
+    padding: 14px 40px; cursor: pointer;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .btn:hover { transform: scale(1.03); }
+  .btn:active { transform: scale(.97); }
+  .btn-primary { background: linear-gradient(135deg, #1368ce, #0a4a9e); box-shadow: 0 4px 16px rgba(19,104,206,0.4); }
+  .btn-success { background: linear-gradient(135deg, #26890c, #1a6009); box-shadow: 0 4px 16px rgba(38,137,12,0.4); }
+  .btn-danger  { background: linear-gradient(135deg, #e21b3c, #b01530); box-shadow: 0 4px 16px rgba(226,27,60,0.4); }
+  .btn-ghost   { background: rgba(255,255,255,0.1); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">TVC<span>.</span>Kahoot</div>
+  <div class="badge" id="status-badge">En espera…</div>
+</header>
+
+<!-- PIN -->
+<div class="view active" id="pin-view">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:20px;max-width:360px;width:100%">
+    <div style="font-size:3rem">🔐</div>
+    <div style="font-size:1.8rem;font-weight:900">Acceso Host</div>
+    <div style="opacity:0.6;text-align:center">Ingresa el PIN para controlar el juego</div>
+    <input id="pin-input" type="password" placeholder="PIN"
+      style="width:100%;background:var(--card);border:2px solid rgba(255,255,255,0.2);border-radius:50px;color:white;font-size:1.4rem;font-weight:800;padding:14px 24px;text-align:center;outline:none;letter-spacing:6px;"
+      onkeydown="if(event.key==='Enter') submitPin()">
+    <button class="btn btn-primary" style="width:100%;font-size:1.1rem;padding:14px;" onclick="submitPin()">Entrar</button>
+    <div id="pin-error" style="color:#ff6b6b;font-size:0.9rem;min-height:1.2em;"></div>
+  </div>
+</div>
+
+<!-- LOBBY -->
+<div class="view" id="lobby">
+  <div class="top">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+      <div class="qr-box">
+        <div id="qrcode"></div>
+        <p>Escanea para unirte</p>
+      </div>
+      <div class="join-url" id="join-url">Cargando URL…</div>
+    </div>
+    <div class="lobby-info">
+      <div class="player-counter">
+        <div class="num" id="player-count">0</div>
+        <div class="lbl">participantes conectados</div>
+      </div>
+      <div id="player-list"></div>
+    </div>
+  </div>
+  <button id="start-btn" disabled onclick="startGame()">▶ Iniciar juego</button>
+</div>
+
+<!-- QUESTION -->
+<div class="view" id="question-view">
+  <div class="q-meta">
+    <span class="q-counter" id="q-counter">Pregunta 1/10</span>
+    <div class="timer-ring">
+      <svg width="80" height="80" viewBox="0 0 80 80">
+        <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="7"/>
+        <circle id="timer-circle" cx="40" cy="40" r="34" fill="none" stroke="#7dd3fc" stroke-width="7"
+          stroke-dasharray="213.6" stroke-dashoffset="0"/>
+      </svg>
+      <span id="timer-num">20</span>
+    </div>
+    <span class="q-answered" id="q-answered">0 / 0 respondieron</span>
+  </div>
+  <div class="progress-bar"><div class="progress-bar-fill" id="timer-progress" style="width:100%"></div></div>
+  <div class="q-text" id="q-text">Pregunta aquí</div>
+  <div class="answers-grid" id="answers-grid"></div>
+</div>
+
+<!-- REVEAL -->
+<div class="view" id="reveal-view">
+  <div class="reveal-title" id="reveal-title">¡Respuesta correcta!</div>
+  <div class="correct-badge" id="correct-badge"></div>
+  <div class="explanation" id="reveal-explanation"></div>
+  <div class="bar-chart" id="bar-chart"></div>
+  <div class="reveal-subtitle" id="reveal-stats"></div>
+  <button class="btn btn-primary" onclick="nextQuestion()">Siguiente pregunta →</button>
+</div>
+
+<!-- LEADERBOARD (mid-game) -->
+<div class="view" id="leaderboard-view">
+  <div class="lb-title">🏆 Leaderboard</div>
+  <div class="lb-list" id="lb-list"></div>
+</div>
+
+<!-- HOST CONTROL BAR -->
+<div id="host-controls">
+  <button class="hbtn" id="btn-skip"      onclick="forceEnd()">⏭ Saltar pregunta</button>
+  <button class="hbtn" id="btn-next-ctrl" onclick="nextQuestion()">→ Siguiente</button>
+  <button class="hbtn" id="btn-reset-ctrl" onclick="resetGame()">↺ Reiniciar juego</button>
+</div>
+
+<!-- COUNTDOWN OVERLAY -->
+<div id="countdown-overlay">
+  <div id="countdown-num">4</div>
+  <div id="countdown-label">PREPÁRENSE</div>
+</div>
+
+<!-- GAME OVER -->
+<div class="view" id="gameover-view">
+  <div class="gameover-title">🎉 ¡Fin del juego!</div>
+  <div class="gameover-sub">Resultados finales</div>
+  <div class="podium" id="podium"></div>
+  <div class="lb-list" id="final-lb"></div>
+  <button class="btn btn-ghost" onclick="resetGame()">↺ Nuevo juego</button>
+</div>
+
+<script>
+const socket = io();
+const SHAPES = ['▲', '◆', '●', '■'];
+const COLORS = ['var(--red)', 'var(--blue)', 'var(--yellow)', 'var(--green)'];
+let totalTime = 20;
+let timerCircumference = 213.6;
+
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  // Control bar visibility
+  document.getElementById('btn-skip').style.display      = id === 'question-view' ? 'flex' : 'none';
+  document.getElementById('btn-next-ctrl').style.display = id === 'reveal-view'   ? 'flex' : 'none';
+  document.getElementById('btn-reset-ctrl').style.display = ['question-view','reveal-view','leaderboard-view','gameover-view'].includes(id) ? 'flex' : 'none';
+}
+
+function forceEnd() {
+  if (confirm('¿Terminar la pregunta ahora y ver resultados?')) {
+    socket.emit('force-end-question');
+  }
+}
+
+// ── QR CODE ──
+fetch('/api/info').then(r => r.json()).then(info => {
+  document.getElementById('join-url').textContent = info.url;
+  new QRCode(document.getElementById('qrcode'), {
+    text: info.url,
+    width: 180, height: 180,
+    colorDark: '#000', colorLight: '#fff',
+    correctLevel: QRCode.CorrectLevel.M,
+  });
+});
+
+// ── PIN ──
+function submitPin() {
+  const pin = document.getElementById('pin-input').value.trim();
+  if (!pin) return;
+  socket.emit('join-host', pin);
+}
+
+document.getElementById('pin-input').addEventListener('focus', function() {
+  this.style.borderColor = '#7dd3fc';
+});
+
+socket.on('host-auth', ({ ok, msg }) => {
+  if (ok) {
+    showView('lobby');
+  } else {
+    document.getElementById('pin-error').textContent = msg || 'PIN incorrecto';
+    document.getElementById('pin-input').value = '';
+    setTimeout(() => document.getElementById('pin-error').textContent = '', 2500);
+  }
+});
+
+// ── SOCKET EVENTS ──
+socket.on('game-state', (state) => {
+  document.getElementById('player-count').textContent = state.playerCount;
+  state.players.forEach(addPlayerChip);
+  if (state.playerCount > 0) document.getElementById('start-btn').disabled = false;
+  document.getElementById('status-badge').textContent = `En espera (${state.playerCount} jugadores)`;
+});
+
+socket.on('player-joined', ({ name, count }) => {
+  document.getElementById('player-count').textContent = count;
+  document.getElementById('status-badge').textContent = `En espera (${count} jugadores)`;
+  addPlayerChip(name);
+  document.getElementById('start-btn').disabled = false;
+});
+
+socket.on('player-left', ({ name, count }) => {
+  document.getElementById('player-count').textContent = count;
+});
+
+socket.on('question', (q) => {
+  totalTime = q.time || 20;
+  document.getElementById('q-counter').textContent = `Pregunta ${q.index + 1} / ${q.total}`;
+  document.getElementById('q-text').textContent = q.text;
+  document.getElementById('q-answered').textContent = `0 / ? respondieron`;
+  document.getElementById('timer-num').textContent = q.time;
+  document.getElementById('timer-progress').style.width = '100%';
+  document.getElementById('timer-circle').style.strokeDashoffset = '0';
+
+  const grid = document.getElementById('answers-grid');
+  grid.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const div = document.createElement('div');
+    div.className = 'ans-card';
+    div.id = `ans-${i}`;
+    div.innerHTML = `<span class="shape">${SHAPES[i]}</span>${opt}`;
+    grid.appendChild(div);
+  });
+
+  showView('question-view');
+  document.getElementById('status-badge').textContent = `Pregunta ${q.index + 1} / ${q.total}`;
+});
+
+socket.on('timer', ({ timeLeft, total }) => {
+  document.getElementById('timer-num').textContent = timeLeft;
+  const pct = timeLeft / (total || totalTime);
+  document.getElementById('timer-progress').style.width = (pct * 100) + '%';
+  const offset = timerCircumference * (1 - pct);
+  document.getElementById('timer-circle').style.strokeDashoffset = offset;
+  // Color change
+  const circle = document.getElementById('timer-circle');
+  if (pct < 0.3) circle.style.stroke = '#e21b3c';
+  else if (pct < 0.6) circle.style.stroke = '#d89e00';
+  else circle.style.stroke = '#7dd3fc';
+});
+
+socket.on('answer-count', ({ count, total }) => {
+  document.getElementById('q-answered').textContent = `${count} / ${total} respondieron`;
+});
+
+socket.on('question-ended', ({ correctAnswer, answerCounts, correctCount, totalAnswered, leaderboard, explanation }) => {
+  // Highlight correct answer
+  document.querySelectorAll('.ans-card').forEach((el, i) => {
+    if (i === correctAnswer) el.classList.add('correct');
+  });
+  // Wait a moment then show reveal
+  setTimeout(() => {
+    const opts = document.querySelectorAll('.ans-card');
+    const correctText = opts[correctAnswer] ? opts[correctAnswer].textContent.replace(SHAPES[correctAnswer], '').trim() : '';
+    document.getElementById('correct-badge').innerHTML = `${SHAPES[correctAnswer]} ${correctText}`;
+    document.getElementById('reveal-explanation').textContent = explanation || '';
+    document.getElementById('reveal-stats').textContent = `${correctCount} de ${totalAnswered} respondieron correctamente`;
+
+    // Bar chart
+    const chart = document.getElementById('bar-chart');
+    chart.innerHTML = '';
+    const max = Math.max(...answerCounts, 1);
+    answerCounts.forEach((cnt, i) => {
+      const col = document.createElement('div');
+      col.className = 'bar-col';
+      const barH = Math.round((cnt / max) * 140);
+      col.innerHTML = `
+        <div class="bar" style="height:${barH}px">${cnt || ''}</div>
+        <div class="bar-label">${SHAPES[i]}</div>`;
+      chart.appendChild(col);
+    });
+
+    showView('reveal-view');
+  }, 1200);
+});
+
+socket.on('leaderboard-update', (lb) => {
+  // Update leaderboard silently
+  renderLeaderboard(lb, 'lb-list');
+});
+
+socket.on('game-over', ({ leaderboard }) => {
+  renderPodium(leaderboard);
+  renderLeaderboard(leaderboard, 'final-lb');
+  showView('gameover-view');
+  document.getElementById('status-badge').textContent = '¡Juego terminado!';
+});
+
+socket.on('countdown', ({ count }) => {
+  const overlay = document.getElementById('countdown-overlay');
+  const num = document.getElementById('countdown-num');
+  const lbl = document.getElementById('countdown-label');
+  overlay.classList.add('show');
+  if (count === 0) {
+    num.textContent = '¡YA!';
+    num.style.color = '#26890c';
+    lbl.textContent = '';
+  } else {
+    num.textContent = count;
+    num.style.color = count <= 2 ? '#e21b3c' : '#7dd3fc';
+    lbl.textContent = 'PREPÁRENSE';
+    num.style.animation = 'none';
+    num.offsetHeight;
+    num.style.animation = 'countPop .4s ease';
+  }
+  if (count === 0) {
+    setTimeout(() => {
+      overlay.classList.remove('show');
+      num.style.color = '#7dd3fc';
+    }, 800);
+  }
+});
+
+socket.on('game-reset', () => {
+  document.getElementById('player-list').innerHTML = '';
+  document.getElementById('player-count').textContent = '0';
+  document.getElementById('start-btn').disabled = true;
+  document.getElementById('status-badge').textContent = 'En espera…';
+  showView('lobby');
+});
+
+// ── HELPERS ──
+function addPlayerChip(name) {
+  const chip = document.createElement('div');
+  chip.className = 'player-chip';
+  chip.textContent = name;
+  document.getElementById('player-list').appendChild(chip);
+}
+
+function renderLeaderboard(lb, containerId) {
+  const medals = ['🥇','🥈','🥉'];
+  const container = document.getElementById(containerId);
+  container.innerHTML = lb.map((p, i) => `
+    <div class="lb-item" style="animation-delay:${i * .07}s">
+      <span class="lb-rank">${medals[i] || (i + 1)}</span>
+      <span class="lb-name">${p.name}</span>
+      <span class="lb-score">${p.score.toLocaleString()} pts</span>
+    </div>`).join('');
+}
+
+function renderPodium(lb) {
+  const podium = document.getElementById('podium');
+  // Orden visual: 2do lugar izquierda, 1er lugar centro, 3er lugar derecha
+  const visualOrder = [
+    { rank: 1, emoji: '🥈', dataIdx: 1 },
+    { rank: 0, emoji: '🥇', dataIdx: 0 },
+    { rank: 2, emoji: '🥉', dataIdx: 2 },
+  ];
+  podium.innerHTML = visualOrder.map(({ emoji, dataIdx }) => {
+    const p = lb[dataIdx];
+    if (!p) return '';
+    return `
+      <div class="podium-item">
+        <div class="podium-name">${p.name}</div>
+        <div class="podium-score">${p.score.toLocaleString()}</div>
+        <div class="podium-block">${emoji}</div>
+      </div>`;
+  }).join('');
+}
+
+// ── ACTIONS ──
+function startGame() {
+  socket.emit('start-game');
+  document.getElementById('start-btn').disabled = true;
+}
+
+function nextQuestion() {
+  socket.emit('next-question');
+}
+
+function resetGame() {
+  socket.emit('reset-game');
+}
+</script>
+</body>
+</html>

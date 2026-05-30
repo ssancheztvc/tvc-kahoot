@@ -1,0 +1,98 @@
+[
+  {
+    "text": "¿En qué año se fundó TVCenLínea?",
+    "options": [
+      "1999",
+      "2000",
+      "2002",
+      "2004"
+    ],
+    "correct": 1,
+    "time": 10,
+    "explanation": "TVCenLínea fue fundada en el año 2000."
+  },
+  {
+    "text": "¿Con cuántas sucursales cuenta TVC?",
+    "options": [
+      "20",
+      "21",
+      "22",
+      "25"
+    ],
+    "correct": 0,
+    "time": 10,
+    "explanation": "TVC cuenta con 20 sucursales."
+  },
+  {
+    "text": "¿Cuál de estas consultas puedes realizar a nuestra IA Litza?",
+    "options": [
+      "Precios y existencias",
+      "Soporte técnico",
+      "Fichas técnicas y base de conocimientos",
+      "Todas las anteriores"
+    ],
+    "correct": 3,
+    "time": 10,
+    "explanation": "Litza puede ayudarte con precios, soporte técnico y fichas técnicas."
+  },
+  {
+    "text": "¿Cuál es una de las novedades de IMOU presentada para 2026?",
+    "options": [
+      "Poly Studio X52",
+      "Cruiser Pano Z",
+      "Basor BF2R D",
+      "ZK Teco SenseFace 7A"
+    ],
+    "correct": 1,
+    "time": 10,
+    "explanation": "IMOU presentó el Cruiser Pano Z como novedad para 2026."
+  },
+  {
+    "text": "¿Qué ventaja ofrece Grandstream a sus clientes?",
+    "options": [
+      "Funciona con telefonía y Networking",
+      "Licencias mensuales obligatorias",
+      "Pago único sin licencias mensuales",
+      "Control de Acceso"
+    ],
+    "correct": 2,
+    "time": 10,
+    "explanation": "Grandstream ofrece pago único sin licencias mensuales."
+  },
+  {
+    "text": "¿Qué tecnología utiliza HP Poly para mejorar las reuniones híbridas?",
+    "options": [
+      "Blockchain",
+      "Inteligencia Artificial",
+      "Realidad Virtual",
+      "Conexión B2B"
+    ],
+    "correct": 1,
+    "time": 10,
+    "explanation": "HP Poly utiliza Inteligencia Artificial para mejorar las reuniones híbridas."
+  },
+  {
+    "text": "¿Cuál de estas soluciones está relacionada con la organización del cableado?",
+    "options": [
+      "Poly Studio X52",
+      "Basor",
+      "Litza IA",
+      "Dahua Acceso"
+    ],
+    "correct": 1,
+    "time": 10,
+    "explanation": "Basor es la solución especializada en organización de cableado."
+  },
+  {
+    "text": "¿Cuál de estos NO es un beneficio de ser distribuidor TVC?",
+    "options": [
+      "Soporte técnico especializado",
+      "Capacitación permanente",
+      "Instalación",
+      "Certificaciones"
+    ],
+    "correct": 2,
+    "time": 10,
+    "explanation": "TVC ofrece soporte, capacitación y certificaciones, pero la instalación no es un beneficio del distribuidor."
+  }
+]
