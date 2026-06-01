@@ -1,98 +1,117 @@
 [
   {
-    "text": "¿En qué año se fundó TVCenLínea?",
+    "text": "¿Qué ofrece Grandstream como ecosistema completo?",
     "options": [
-      "1999",
-      "2000",
-      "2002",
-      "2004"
-    ],
-    "correct": 1,
-    "time": 10,
-    "explanation": "TVCenLínea fue fundada en el año 2000."
-  },
-  {
-    "text": "¿Con cuántas sucursales cuenta TVC?",
-    "options": [
-      "20",
-      "21",
-      "22",
-      "25"
+      "Telefonía IP, Wi-Fi, switches, routers y seguridad",
+      "Solo cámaras analógicas",
+      "Únicamente software de facturación",
+      "Alarmas residenciales inalámbricas"
     ],
     "correct": 0,
-    "time": 10,
-    "explanation": "TVC cuenta con 20 sucursales."
+    "time": 15,
+    "explanation": "Grandstream ofrece un ecosistema completo: telefonía IP, Wi-Fi, switches, routers y seguridad de un mismo fabricante."
   },
   {
-    "text": "¿Cuál de estas consultas puedes realizar a nuestra IA Litza?",
+    "text": "¿Qué busca mejorar HP Poly en reuniones híbridas?",
     "options": [
-      "Precios y existencias",
-      "Soporte técnico",
-      "Fichas técnicas y base de conocimientos",
-      "Todas las anteriores"
+      "Que te vean y escuchen perfecto",
+      "La velocidad de paquetería",
+      "El acomodo de cableado",
+      "El control de inventarios"
     ],
-    "correct": 3,
-    "time": 10,
-    "explanation": "Litza puede ayudarte con precios, soporte técnico y fichas técnicas."
+    "correct": 0,
+    "time": 15,
+    "explanation": "HP Poly busca que te vean y escuchen perfecto con audio y video profesional y tecnología de IA."
   },
   {
-    "text": "¿Cuál es una de las novedades de IMOU presentada para 2026?",
+    "text": "¿Qué es Basor?",
     "options": [
-      "Poly Studio X52",
-      "Cruiser Pano Z",
-      "Basor BF2R D",
-      "ZK Teco SenseFace 7A"
+      "Especialista en charolas portacables",
+      "Una marca de headsets",
+      "Una app móvil de TVC",
+      "Un asistente con IA"
     ],
-    "correct": 1,
-    "time": 10,
-    "explanation": "IMOU presentó el Cruiser Pano Z como novedad para 2026."
+    "correct": 0,
+    "time": 15,
+    "explanation": "Basor es especialista en charolas portacables: la base física que sostiene todo el cableado."
   },
   {
-    "text": "¿Qué ventaja ofrece Grandstream a sus clientes?",
+    "text": "¿Qué es Litza IA?",
     "options": [
-      "Funciona con telefonía y Networking",
-      "Licencias mensuales obligatorias",
-      "Pago único sin licencias mensuales",
-      "Control de Acceso"
+      "El asistente con Inteligencia Artificial de TVC",
+      "Una paquetería nueva",
+      "Una charola metálica",
+      "Un modelo de cámara IP"
     ],
-    "correct": 2,
-    "time": 10,
-    "explanation": "Grandstream ofrece pago único sin licencias mensuales."
+    "correct": 0,
+    "time": 15,
+    "explanation": "Litza es el asistente con Inteligencia Artificial de TVC, disponible 24/7 y ya en fase BETA."
   },
   {
-    "text": "¿Qué tecnología utiliza HP Poly para mejorar las reuniones híbridas?",
+    "text": "¿Qué puede consultar Litza IA?",
     "options": [
-      "Blockchain",
-      "Inteligencia Artificial",
-      "Realidad Virtual",
-      "Conexión B2B"
+      "Precios, pedidos y existencias",
+      "Únicamente clima y noticias",
+      "Solo facturas impresas",
+      "Solo garantías vencidas"
     ],
-    "correct": 1,
-    "time": 10,
-    "explanation": "HP Poly utiliza Inteligencia Artificial para mejorar las reuniones híbridas."
+    "correct": 0,
+    "time": 15,
+    "explanation": "Litza consulta precios, pedidos y existencias, además de soporte técnico, fichas técnicas y base de conocimientos."
   },
   {
-    "text": "¿Cuál de estas soluciones está relacionada con la organización del cableado?",
+    "text": "En compras mayores a $5,000 + IVA, ¿qué se puede elegir sin costo adicional?",
     "options": [
-      "Poly Studio X52",
-      "Basor",
-      "Litza IA",
-      "Dahua Acceso"
+      "Paqueterías como Estafeta Terr., DHL Terr., DHL día siguiente, Paquete Express y paqueterías locales",
+      "Solo recolección en sucursal",
+      "Únicamente envío internacional",
+      "Envío por dron"
     ],
-    "correct": 1,
-    "time": 10,
-    "explanation": "Basor es la solución especializada en organización de cableado."
+    "correct": 0,
+    "time": 20,
+    "explanation": "En compras mayores a $5,000 + IVA puedes elegir sin costo entre varias paqueterías: Estafeta Terrestre, DHL Terrestre, DHL Día Siguiente, Paquete Express y rutas locales."
   },
   {
-    "text": "¿Cuál de estos NO es un beneficio de ser distribuidor TVC?",
+    "text": "¿Para qué sirve activar el doble factor 2FA en tvc.mx?",
     "options": [
-      "Soporte técnico especializado",
-      "Capacitación permanente",
-      "Instalación",
-      "Certificaciones"
+      "Proteger la cuenta con una capa extra de seguridad",
+      "Cambiar los precios automáticamente",
+      "Crear nuevas categorías",
+      "Instalar cámaras más rápido"
     ],
-    "correct": 2,
-    "time": 10,
-    "explanation": "TVC ofrece soporte, capacitación y certificaciones, pero la instalación no es un beneficio del distribuidor."
+    "correct": 0,
+    "time": 15,
+    "explanation": "El doble factor (2FA) añade una segunda verificación al iniciar sesión, protegiendo la cuenta contra accesos no autorizados."
+  },
+  {
+    "text": "¿Qué plataforma sustituirá a Universidad TVC?",
+    "options": ["Academia TVC", "Litza IA", "API 2.0", "Basorfil BF2R"],
+    "correct": 0,
+    "time": 15,
+    "explanation": "Academia TVC es la nueva plataforma de conocimiento que sustituye a Universidad TVC."
+  },
+  {
+    "text": "¿Qué permite la API 2.0 a clientes integradores?",
+    "options": [
+      "Consultar información desde sus propios sistemas",
+      "Reemplazar todas las compras manuales por efectivo",
+      "Crear cámaras de seguridad",
+      "Instalar charolas automáticamente"
+    ],
+    "correct": 0,
+    "time": 15,
+    "explanation": "La API 2.0 permite a los clientes integradores consultar información desde sus propios sistemas de forma autónoma y rápida."
+  },
+  {
+    "text": "¿Qué mejora tendrá el nuevo motor de búsqueda?",
+    "options": [
+      "Tolerancia a errores de tipeo",
+      "Solo buscar por códigos exactos",
+      "Eliminar sinónimos",
+      "Ocultar disponibilidad"
+    ],
+    "correct": 0,
+    "time": 15,
+    "explanation": "El nuevo motor de búsqueda tolera errores de tipeo, entiende jerga mexicana y prioriza marcas y disponibilidad."
   }
 ]
