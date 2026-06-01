@@ -140,7 +140,7 @@ app.post('/api/questions/reorder', (req, res) => {
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'host.html')));
 app.get('/play', (req, res) => res.sendFile(path.join(__dirname, 'public', 'player.html')));
-app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin.html')));
 
 function calcScore(timeLeft, maxTime) {
   return Math.round(1000 + (timeLeft / maxTime) * 500);
