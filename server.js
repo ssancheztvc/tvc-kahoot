@@ -10,8 +10,29 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 const PORT = process.env.PORT || 3000;
-const HOST_PIN = process.env.HOST_PIN || 'tvc2026'; // Cambia este PIN
+const HOST_PIN = process.env.HOST_PIN || 'tvc2026'; // Cambia este PIN (mejor por variable de entorno HOST_PIN)
 const authenticatedHosts = new Set(); // sockets autenticados como host
+
+if (HOST_PIN === 'tvc2026') {
+  console.warn('\n⚠️  Estás usando el PIN por defecto (tvc2026). Define HOST_PIN antes de exponerlo en un servidor:');
+  console.warn('    HOST_PIN="tu-pin-secreto" node server.js\n');
+}
+
+// Limpia texto para evitar inyección de HTML/JS (XSS) cuando se muestra en pantalla.
+// Quitar < y > impide formar cualquier etiqueta o atributo (onerror, <script>, etc.)
+// y evita problemas de visualización con textContent.
+function sanitizeText(s) {
+  return String(s == null ? '' : s).replace(/[<>]/g, '');
+}
+
+// Protege /admin y la API de preguntas con el PIN (Basic Auth del navegador)
+function requireAdmin(req, res, next) {
+  const token = (req.headers.authorization || '').split(' ')[1] || '';
+  const pass = Buffer.from(token, 'base64').toString().split(':')[1] || '';
+  if (pass === HOST_PIN) return next();
+  res.set('WWW-Authenticate', 'Basic realm="TVC Kahoot Admin"');
+  return res.status(401).send('Autenticación requerida');
+}
 
 // Load questions (mutable array)
 let questions = JSON.parse(fs.readFileSync(path.join(__dirname, 'questions.json'), 'utf8'));
@@ -42,6 +63,15 @@ function getLocalIP() {
   return 'localhost';
 }
 
+// Candado: /admin, /admin.html y la API de preguntas exigen PIN
+app.use((req, res, next) => {
+  const p = req.path;
+  if (p === '/admin' || p === '/admin.html' || p.startsWith('/api/questions')) {
+    return requireAdmin(req, res, next);
+  }
+  next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
@@ -56,11 +86,21 @@ app.get('/api/info', (req, res) => {
 // ── ADMIN API ──
 app.get('/api/questions', (req, res) => res.json(questions));
 
+// Normaliza y limpia una pregunta antes de guardarla
+function cleanQuestion(body) {
+  if (!body || !body.text || !Array.isArray(body.options) || body.options.length !== 4) return null;
+  return {
+    text: sanitizeText(body.text),
+    options: body.options.map(sanitizeText),
+    correct: Math.min(3, Math.max(0, parseInt(body.correct) || 0)),
+    time: Math.min(120, Math.max(5, parseInt(body.time) || 20)),
+    explanation: sanitizeText(body.explanation || ''),
+  };
+}
+
 app.post('/api/questions', (req, res) => {
-  const q = req.body;
-  if (!q.text || !Array.isArray(q.options) || q.options.length !== 4) {
-    return res.status(400).json({ error: 'Pregunta inválida' });
-  }
+  const q = cleanQuestion(req.body);
+  if (!q) return res.status(400).json({ error: 'Pregunta inválida' });
   questions.push(q);
   saveQuestions();
   res.json({ ok: true, index: questions.length - 1 });
@@ -69,7 +109,9 @@ app.post('/api/questions', (req, res) => {
 app.put('/api/questions/:i', (req, res) => {
   const i = parseInt(req.params.i);
   if (i < 0 || i >= questions.length) return res.status(404).json({ error: 'No encontrada' });
-  questions[i] = req.body;
+  const q = cleanQuestion(req.body);
+  if (!q) return res.status(400).json({ error: 'Pregunta inválida' });
+  questions[i] = q;
   saveQuestions();
   res.json({ ok: true });
 });
@@ -83,8 +125,13 @@ app.delete('/api/questions/:i', (req, res) => {
 });
 
 app.post('/api/questions/reorder', (req, res) => {
-  const { from, to } = req.body;
-  if (from === undefined || to === undefined) return res.status(400).json({ error: 'Faltan índices' });
+  const from = parseInt(req.body.from);
+  const to = parseInt(req.body.to);
+  const n = questions.length;
+  if (!Number.isInteger(from) || !Number.isInteger(to) ||
+      from < 0 || from >= n || to < 0 || to >= n) {
+    return res.status(400).json({ error: 'Índices inválidos' });
+  }
   const [item] = questions.splice(from, 1);
   questions.splice(to, 0, item);
   saveQuestions();
@@ -234,7 +281,7 @@ io.on('connection', (socket) => {
       socket.emit('join-error', 'El juego ya terminó.');
       return;
     }
-    const cleanName = String(name || '').trim().slice(0, 24);
+    const cleanName = sanitizeText(String(name || '').trim().slice(0, 24));
     if (!cleanName) { socket.emit('join-error', 'Escribe tu nombre.'); return; }
 
     gameState.players[socket.id] = { name: cleanName, score: 0 };
@@ -336,7 +383,8 @@ io.on('connection', (socket) => {
   }
 });
 
-server.listen(PORT, '0.0.0.0', () => {
+const BIND_HOST = process.env.BIND_HOST || '0.0.0.0'; // En producción detrás de proxy: 127.0.0.1
+server.listen(PORT, BIND_HOST, () => {
   const ip = getLocalIP();
   console.log('\n🎮  TVC Kahoot listo!\n');
   console.log(`   Host (proyectar): http://localhost:${PORT}`);
