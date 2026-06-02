@@ -108,15 +108,15 @@
     "explanation": "La API 2.0 permite a los clientes integradores consultar información desde sus propios sistemas de forma autónoma y rápida."
   },
   {
-    "text": "¿Qué mejora tendrá el nuevo motor de búsqueda?",
+    "text": "¿Cómo se llama el libro de Baltazar Zúñiga?",
     "options": [
-      "Eliminar sinónimos",
-      "Solo buscar por códigos exactos",
-      "Tolerancia a errores de tipeo",
-      "Ocultar disponibilidad"
+      "El Señor de los anillos",
+      "El arte de la guerra",
+      "Las historias que nos contamos",
+      "Cien años de soledad"
     ],
     "correct": 2,
     "time": 15,
-    "explanation": "El nuevo motor de búsqueda tolera errores de tipeo, entiende jerga mexicana y prioriza marcas y disponibilidad."
+    "explanation": "El libro de Baltazar Zúñiga se llama 'Las historias que nos contamos'."
   }
 ]
