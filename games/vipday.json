@@ -1,0 +1,127 @@
+{
+  "title": "VIP Day",
+  "shuffleQuestions": false,
+  "shuffleAnswers": false,
+  "questions": [
+    {
+      "text": "¿Qué ofrece Grandstream como ecosistema completo?",
+      "options": [
+        "Telefonía IP, Wi-Fi, switches, routers y seguridad",
+        "Únicamente software de facturación",
+        "Solo cámaras analógicas",
+        "Alarmas residenciales inalámbricas"
+      ],
+      "correct": 0,
+      "time": 15,
+      "explanation": "Grandstream ofrece un ecosistema completo: telefonía IP, Wi-Fi, switches, routers y seguridad de un mismo fabricante."
+    },
+    {
+      "text": "¿Qué busca mejorar HP Poly en reuniones híbridas?",
+      "options": [
+        "Que te vean y escuchen perfecto",
+        "El acomodo de cableado",
+        "El control de inventarios",
+        "La velocidad de paquetería"
+      ],
+      "correct": 0,
+      "time": 15,
+      "explanation": "HP Poly busca que te vean y escuchen perfecto con audio y video profesional y tecnología de IA."
+    },
+    {
+      "text": "¿Qué es Basor?",
+      "options": [
+        "Una app móvil de TVC",
+        "Un asistente con IA",
+        "Una marca de headsets",
+        "Especialista en charolas portacables"
+      ],
+      "correct": 3,
+      "time": 15,
+      "explanation": "Basor es especialista en charolas portacables: la base física que sostiene todo el cableado."
+    },
+    {
+      "text": "¿Qué es Litza IA?",
+      "options": [
+        "Una paquetería nueva",
+        "Una charola metálica",
+        "El asistente con Inteligencia Artificial de TVC",
+        "Un modelo de cámara IP"
+      ],
+      "correct": 2,
+      "time": 15,
+      "explanation": "Litza es el asistente con Inteligencia Artificial de TVC, disponible 24/7 y ya en fase BETA."
+    },
+    {
+      "text": "¿Qué puede consultar Litza IA?",
+      "options": [
+        "Únicamente clima y noticias",
+        "Solo facturas impresas",
+        "Solo garantías vencidas",
+        "Precios, pedidos y existencias"
+      ],
+      "correct": 3,
+      "time": 15,
+      "explanation": "Litza consulta precios, pedidos y existencias, además de soporte técnico, fichas técnicas y base de conocimientos."
+    },
+    {
+      "text": "En compras mayores a $5,000 + IVA, ¿qué se puede elegir sin costo adicional?",
+      "options": [
+        "Únicamente envío internacional",
+        "Envío por dron",
+        "Paqueterías como Estafeta Terr., DHL Terr., DHL día siguiente, Paquete Express y paqueterías locales",
+        "Solo recolección en sucursal"
+      ],
+      "correct": 2,
+      "time": 20,
+      "explanation": "En compras mayores a $5,000 + IVA puedes elegir sin costo entre varias paqueterías: Estafeta Terrestre, DHL Terrestre, DHL Día Siguiente, Paquete Express y rutas locales."
+    },
+    {
+      "text": "¿Para qué sirve activar el doble factor 2FA en tvc.mx?",
+      "options": [
+        "Cambiar los precios automáticamente",
+        "Crear nuevas categorías",
+        "Proteger la cuenta con una capa extra de seguridad",
+        "Instalar cámaras más rápido"
+      ],
+      "correct": 2,
+      "time": 15,
+      "explanation": "El doble factor (2FA) añade una segunda verificación al iniciar sesión, protegiendo la cuenta contra accesos no autorizados."
+    },
+    {
+      "text": "¿Qué plataforma sustituirá a Universidad TVC?",
+      "options": [
+        "API 2.0",
+        "Basorfil BF2R",
+        "Litza IA",
+        "Academia TVC"
+      ],
+      "correct": 3,
+      "time": 15,
+      "explanation": "Academia TVC es la nueva plataforma de conocimiento que sustituye a Universidad TVC."
+    },
+    {
+      "text": "¿Qué permite la API 2.0 a clientes integradores?",
+      "options": [
+        "Instalar charolas automáticamente",
+        "Reemplazar todas las compras manuales por efectivo",
+        "Consultar información desde sus propios sistemas",
+        "Crear cámaras de seguridad"
+      ],
+      "correct": 2,
+      "time": 15,
+      "explanation": "La API 2.0 permite a los clientes integradores consultar información desde sus propios sistemas de forma autónoma y rápida."
+    },
+    {
+      "text": "¿Cómo se llama el libro de Baltazar Zúñiga?",
+      "options": [
+        "El Señor de los anillos",
+        "El arte de la guerra",
+        "Las historias que nos contamos",
+        "Cien años de soledad"
+      ],
+      "correct": 2,
+      "time": 15,
+      "explanation": "El libro de Baltazar Zúñiga se llama 'Las historias que nos contamos'."
+    }
+  ]
+}
