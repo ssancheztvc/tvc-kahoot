@@ -87,10 +87,10 @@ function getLocalIP() {
   return 'localhost';
 }
 
-// Candado: /admin, /admin.html y la API de preguntas y juegos exigen PIN
+// Candado: /admin, /admin.html y la API de juegos exigen PIN
 app.use((req, res, next) => {
   const p = req.path;
-  if (p === '/admin' || p === '/admin.html' || p.startsWith('/api/questions') || p.startsWith('/api/games')) {
+  if (p === '/admin' || p === '/admin.html' || p.startsWith('/api/games')) {
     return requireAdmin(req, res, next);
   }
   next();
@@ -119,6 +119,12 @@ function cleanQuestion(body) {
     explanation: sanitizeText(body.explanation || ''),
   };
 }
+
+// Valida formato de :id en todas las rutas de juegos (defense-in-depth)
+app.param('id', (req, res, next, id) => {
+  if (!/^[a-z0-9-]+$/.test(id)) return res.status(400).json({ error: 'id inválido' });
+  next();
+});
 
 // Juegos
 app.get('/api/games', (req, res) => res.json(store.listGames()));
