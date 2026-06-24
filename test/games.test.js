@@ -68,6 +68,15 @@ test('updateGameMeta cambia título y banderas, conserva preguntas', () => {
   assert.strictEqual(g.questions.length, 1);
 });
 
+test('deleteGame elimina el juego y gameExists retorna false', () => {
+  const store = createGameStore(tmpRoot());
+  store.createGame('temp', 'Temporal');
+  assert.strictEqual(store.listGames().length, 1);
+  store.deleteGame('temp');
+  assert.strictEqual(store.listGames().length, 0);
+  assert.strictEqual(store.gameExists('temp'), false);
+});
+
 test('migrateLegacy crea juego inicial solo si no hay juegos', () => {
   const root = tmpRoot();
   const store = createGameStore(root);
