@@ -12,7 +12,7 @@ test('shuffleArray no muta el original y conserva los mismos elementos', () => {
   const orig = [1, 2, 3, 4];
   const out = shuffleArray(orig, fakeRng([0.9, 0.1, 0.5]));
   assert.deepStrictEqual(orig, [1, 2, 3, 4]);
-  assert.deepStrictEqual([...out].sort(), [1, 2, 3, 4]);
+  assert.deepStrictEqual([...out].sort((a, b) => a - b), [1, 2, 3, 4]);
   assert.strictEqual(out.length, 4);
 });
 
@@ -38,6 +38,36 @@ test('prepareQuestions sin banderas devuelve copia equivalente', () => {
   const out = prepareQuestions(game);
   assert.deepStrictEqual(out, game.questions);
   assert.notStrictEqual(out, game.questions); // copia distinta
+});
+
+test('prepareQuestions con shuffleQuestions reordena las preguntas sin mutarlas', () => {
+  const q1 = { text: 'q1', options: ['a', 'b', 'c', 'd'], correct: 0, time: 15 };
+  const q2 = { text: 'q2', options: ['e', 'f', 'g', 'h'], correct: 2, time: 15 };
+  const q3 = { text: 'q3', options: ['i', 'j', 'k', 'l'], correct: 1, time: 15 };
+  const game = {
+    shuffleQuestions: true,
+    shuffleAnswers: false,
+    questions: [q1, q2, q3],
+  };
+  // fakeRng([0.9, 0.1]): Fisher-Yates sobre 3 elem →
+  //   i=2: j=floor(0.9*3)=2 (sin cambio)
+  //   i=1: j=floor(0.1*2)=0 → intercambia índices 0 y 1
+  // resultado: [q2, q1, q3]
+  const out = prepareQuestions(game, fakeRng([0.9, 0.1]));
+
+  // mismas preguntas (multiconjunto de text)
+  const inTexts  = game.questions.map((q) => q.text).sort();
+  const outTexts = out.map((q) => q.text).sort();
+  assert.deepStrictEqual(outTexts, inTexts);
+
+  // el orden realmente cambió
+  assert.notDeepStrictEqual(
+    out.map((q) => q.text),
+    game.questions.map((q) => q.text)
+  );
+
+  // el arreglo original no fue mutado
+  assert.deepStrictEqual(game.questions, [q1, q2, q3]);
 });
 
 test('prepareQuestions con shuffleAnswers conserva la correcta de cada pregunta', () => {
