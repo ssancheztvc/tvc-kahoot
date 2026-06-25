@@ -62,6 +62,126 @@
       "correct": 1,
       "time": 15,
       "explanation": ""
+    },
+    {
+      "text": "¿Cuántos años tiene SECO-LARM en el mercado?",
+      "options": [
+        "46 años",
+        "50 años",
+        "56 años",
+        "60 años"
+      ],
+      "correct": 2,
+      "time": 15,
+      "explanation": "SECO-LARM tiene 56 años en el mercado."
+    },
+    {
+      "text": "¿Cuál es el producto más vendido de SECO-LARM?",
+      "options": [
+        "El overhead de cortina SM-226-LQ",
+        "Mini Photobeam Sensor",
+        "Sirena exterior autoalimentada",
+        "Botón de pánico inalámbrico"
+      ],
+      "correct": 0,
+      "time": 20,
+      "explanation": "El producto más vendido es el overhead de cortina SM-226-LQ."
+    },
+    {
+      "text": "Diga el nombre de una de las certificaciones con las que cuentan los productos de SECO-LARM",
+      "options": [
+        "NDAA, RoHS, UL, FCC",
+        "EN54",
+        "IP",
+        "IK"
+      ],
+      "correct": 0,
+      "time": 15,
+      "explanation": ""
+    },
+    {
+      "text": "¿Qué productos tienen certificaciones para incendio?",
+      "options": [
+        "Varios electroimanes y algunos contras eléctricos",
+        "Todos los sensores de movimiento",
+        "Las cámaras IP",
+        "Los teclados de control de acceso"
+      ],
+      "correct": 0,
+      "time": 20,
+      "explanation": ""
+    },
+    {
+      "text": "Diga el nombre de algún producto nuevo de SECO-LARM (sección de nuevos productos)",
+      "options": [
+        "Mini Photobeam Sensor",
+        "Luz estroboscópica",
+        "Mini sirena",
+        "Contacto magnético de montaje oculto"
+      ],
+      "correct": 0,
+      "time": 20,
+      "explanation": ""
+    },
+    {
+      "text": "¿Cuál es el modelo de panel IQ más básico?",
+      "options": [
+        "IQHUB",
+        "IQPANEL4",
+        "IQ4NS",
+        "IQ4HUB"
+      ],
+      "correct": 2,
+      "time": 15,
+      "explanation": ""
+    },
+    {
+      "text": "¿Qué tecnologías inalámbricas están incluidas en un panel IQ4?",
+      "options": [
+        "ZigBee, Z-Wave, LTE, microondas",
+        "Z-Wave, PowerG, LTE, Wi-Fi, Bluetooth",
+        "433 MHz, LTE, PowerG, Wi-Fi",
+        "Bluetooth, Z-Wave, microondas, 433 MHz"
+      ],
+      "correct": 1,
+      "time": 25,
+      "explanation": ""
+    },
+    {
+      "text": "¿Algunas de las ventajas del IQLock frente a otras cerraduras inalámbricas?",
+      "options": [
+        "Se adapta a cualquier puerta, no ocupa llave física, rango incomparable",
+        "Gestión remota, rango incomparable, viene en 5 acabados",
+        "Cierre por horarios, no requiere baterías, no le entra el agua",
+        "Rango incomparable, no depende únicamente del internet del hogar u oficina para la gestión remota (conexión LTE del panel)"
+      ],
+      "correct": 3,
+      "time": 30,
+      "explanation": ""
+    },
+    {
+      "text": "¿Qué configuraciones acepta el nuevo módulo de entradas/salidas PG-IO9MC?",
+      "options": [
+        "2 entradas / 2 salidas ó 4 entradas",
+        "3 entradas / 1 salida ó 4 entradas",
+        "1 entrada / 3 salidas ó 4 salidas",
+        "Cualquier combinación deseada"
+      ],
+      "correct": 0,
+      "time": 20,
+      "explanation": ""
+    },
+    {
+      "text": "¿Ventajas del nuevo HUB de Video de DSC Connect?",
+      "options": [
+        "Proporciona conectividad Wi-Fi de salida al sistema de alarma e integración con cámaras IP ONVIF",
+        "Puede funcionar como Access Point Wi-Fi",
+        "Conectar el panel de alarma a cualquier módulo Wi-Fi del hogar o negocio",
+        "Conectar el panel de alarma a un dispositivo móvil vía Wi-Fi"
+      ],
+      "correct": 0,
+      "time": 30,
+      "explanation": ""
     }
   ]
 }
