@@ -77,6 +77,20 @@ test('deleteGame elimina el juego y gameExists retorna false', () => {
   assert.strictEqual(store.gameExists('temp'), false);
 });
 
+test('theme se persiste y sobrevive a editar preguntas', () => {
+  const store = createGameStore(tmpRoot());
+  store.createGame('g', 'G');
+  store.updateGameMeta('g', { theme: 'futbol' });
+  assert.strictEqual(store.getGame('g').theme, 'futbol');
+  assert.strictEqual(store.listGames()[0].theme, 'futbol');
+  // editar preguntas NO debe borrar el theme
+  store.addQuestion('g', Q('q1'));
+  assert.strictEqual(store.getGame('g').theme, 'futbol');
+  // juego sin theme reporta cadena vacía
+  store.createGame('base', 'Base');
+  assert.strictEqual(store.getGame('base').theme, '');
+});
+
 test('migrateLegacy crea juego inicial solo si no hay juegos', () => {
   const root = tmpRoot();
   const store = createGameStore(root);

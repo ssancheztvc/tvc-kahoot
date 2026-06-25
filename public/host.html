@@ -280,12 +280,19 @@
   .btn-success { background: linear-gradient(135deg, #26890c, #1a6009); box-shadow: 0 4px 16px rgba(38,137,12,0.4); }
   .btn-danger  { background: linear-gradient(135deg, #e21b3c, #b01530); box-shadow: 0 4px 16px rgba(226,27,60,0.4); }
   .btn-ghost   { background: rgba(255,255,255,0.1); }
+
+  /* ── THEME: futbol ── */
+  body.theme-futbol header { border-bottom-color: #2e7d32; }
+  body.theme-futbol .badge { background: rgba(46,125,50,0.25); }
+  body.theme-futbol .player-counter .num,
+  body.theme-futbol .join-url { color: #34d058; }
+  body.theme-futbol #countdown-overlay { background: rgba(8,30,12,0.93); }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="logo">TVC<span>.</span>Kahoot</div>
+  <div class="logo" id="app-logo">TVC<span>.</span>Kahoot</div>
   <div class="badge" id="status-badge">En espera…</div>
 </header>
 
@@ -388,6 +395,34 @@ const COLORS = ['var(--red)', 'var(--blue)', 'var(--yellow)', 'var(--green)'];
 let totalTime = 20;
 let timerCircumference = 213.6;
 
+// ── THEME ──
+let THEME = '';
+const THEMES = {
+  futbol: {
+    startBtn: '⚽ Pitazo inicial',
+    countdownLabel: 'SALTAN A LA CANCHA',
+    go: '¡ARRANCA!',
+    lbTitle: '🏆 Tabla de posiciones',
+    gameover: '🏆 ¡Final del partido!',
+  },
+};
+function t(key, fallback) {
+  return (THEMES[THEME] && THEMES[THEME][key]) || fallback;
+}
+function applyInfo(info) {
+  if (info.title) {
+    document.getElementById('app-logo').textContent = info.title;
+    document.title = info.title + ' — Host';
+  }
+  THEME = info.theme || '';
+  if (THEMES[THEME]) {
+    document.body.classList.add('theme-' + THEME);
+    document.getElementById('start-btn').textContent = t('startBtn', '▶ Iniciar juego');
+    document.querySelector('#leaderboard-view .lb-title').textContent = t('lbTitle', '🏆 Leaderboard');
+    document.querySelector('#gameover-view .gameover-title').textContent = t('gameover', '🎉 ¡Fin del juego!');
+  }
+}
+
 function showView(id) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -405,6 +440,7 @@ function forceEnd() {
 
 // ── QR CODE ──
 fetch('/api/info').then(r => r.json()).then(info => {
+  applyInfo(info);
   document.getElementById('join-url').textContent = info.url;
   new QRCode(document.getElementById('qrcode'), {
     text: info.url,
@@ -543,13 +579,13 @@ socket.on('countdown', ({ count }) => {
   const lbl = document.getElementById('countdown-label');
   overlay.classList.add('show');
   if (count === 0) {
-    num.textContent = '¡YA!';
+    num.textContent = t('go', '¡YA!');
     num.style.color = '#26890c';
     lbl.textContent = '';
   } else {
     num.textContent = count;
     num.style.color = count <= 2 ? '#e21b3c' : '#7dd3fc';
-    lbl.textContent = 'PREPÁRENSE';
+    lbl.textContent = t('countdownLabel', 'PREPÁRENSE');
     num.style.animation = 'none';
     num.offsetHeight;
     num.style.animation = 'countPop .4s ease';
