@@ -162,6 +162,30 @@ textarea { resize: vertical; min-height: 60px; font-family: inherit; }
 
 <div class="container">
 
+  <!-- GAME SELECTOR -->
+  <div class="form-card">
+    <h2>🎟️ Juego / Evento</h2>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+      <div class="form-group" style="flex:1;min-width:180px">
+        <label>Juego seleccionado</label>
+        <select id="game-select" style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-size:0.95rem;padding:10px 14px;width:100%"></select>
+      </div>
+      <button class="btn btn-primary" onclick="activateGame()">✅ Activar este</button>
+      <button class="btn btn-ghost" onclick="renameGame()">✏️ Renombrar</button>
+      <button class="btn btn-ghost" onclick="newGame()">➕ Nuevo</button>
+      <button class="btn btn-danger" onclick="deleteGame()">🗑 Eliminar</button>
+    </div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap">
+      <label class="radio-btn" id="lbl-shuffle-q" style="cursor:pointer">
+        <input type="checkbox" id="shuffle-questions" onchange="saveFlags()" style="margin-right:6px"> Barajar preguntas
+      </label>
+      <label class="radio-btn" id="lbl-shuffle-a" style="cursor:pointer">
+        <input type="checkbox" id="shuffle-answers" onchange="saveFlags()" style="margin-right:6px"> Barajar respuestas
+      </label>
+      <span id="active-tag" style="align-self:center;color:var(--green);font-weight:700"></span>
+    </div>
+  </div>
+
   <!-- ADD FORM -->
   <div class="form-card">
     <h2>➕ Nueva pregunta</h2>
@@ -258,6 +282,8 @@ textarea { resize: vertical; min-height: 60px; font-family: inherit; }
 
 <script>
 let questions = [];
+let games = [];
+let selectedGame = null;
 let selectedCorrect = 0;
 let editSelectedCorrect = 0;
 let dragSrc = null;
@@ -282,10 +308,87 @@ function setRadio(containerId, val) {
 }
 
 // ── LOAD ──
+async function loadGames() {
+  games = await (await fetch('/api/games')).json();
+  const sel = document.getElementById('game-select');
+  if (!selectedGame || !games.find(g => g.id === selectedGame)) {
+    selectedGame = (games.find(g => g.active) || games[0] || {}).id || null;
+  }
+  sel.innerHTML = games.map(g =>
+    `<option value="${g.id}"${g.id === selectedGame ? ' selected' : ''}>${esc(g.title)}${g.active ? ' (activo)' : ''}</option>`
+  ).join('');
+  const active = games.find(g => g.active);
+  document.getElementById('active-tag').textContent = active ? `Activo: ${active.title}` : 'Sin juego activo';
+  if (selectedGame) await loadQuestions();
+}
+
+document.getElementById('game-select') && document.getElementById('game-select').addEventListener('change', async (e) => {
+  selectedGame = e.target.value;
+  await loadQuestions();
+});
+
 async function loadQuestions() {
-  const res = await fetch('/api/questions');
+  const res = await fetch(`/api/games/${selectedGame}/questions`);
   questions = await res.json();
   renderList();
+  loadFlags();
+}
+
+function loadFlags() {
+  const g = games.find(x => x.id === selectedGame) || {};
+  document.getElementById('shuffle-questions').checked = !!g.shuffleQuestions;
+  document.getElementById('shuffle-answers').checked = !!g.shuffleAnswers;
+}
+
+async function saveFlags() {
+  await fetch(`/api/games/${selectedGame}`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      shuffleQuestions: document.getElementById('shuffle-questions').checked,
+      shuffleAnswers: document.getElementById('shuffle-answers').checked,
+    }),
+  });
+  await loadGames();
+  toast('Ajustes guardados ✓');
+}
+
+async function activateGame() {
+  const res = await fetch(`/api/games/${selectedGame}/activate`, { method: 'POST' });
+  if (res.ok) { await loadGames(); toast('Juego activado ✓'); }
+  else toast((await res.json()).error || 'No se pudo activar', true);
+}
+
+async function newGame() {
+  const title = prompt('Nombre del evento (visible):');
+  if (!title) return;
+  const id = prompt('Id corto (minúsculas, números y guiones), p. ej. expo-2026:');
+  if (!id) return;
+  const res = await fetch('/api/games', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, title }),
+  });
+  if (res.ok) { selectedGame = id; await loadGames(); toast('Juego creado ✓'); }
+  else toast((await res.json()).error || 'Error', true);
+}
+
+async function renameGame() {
+  const g = games.find(x => x.id === selectedGame);
+  const title = prompt('Nuevo nombre:', g ? g.title : '');
+  if (!title) return;
+  const res = await fetch(`/api/games/${selectedGame}`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title }),
+  });
+  if (res.ok) { await loadGames(); toast('Renombrado ✓'); }
+  else toast((await res.json()).error || 'No se pudo renombrar', true);
+}
+
+async function deleteGame() {
+  const g = games.find(x => x.id === selectedGame);
+  if (!confirm(`¿Eliminar el juego "${g ? g.title : selectedGame}"?`)) return;
+  const res = await fetch(`/api/games/${selectedGame}`, { method: 'DELETE' });
+  if (res.ok) { selectedGame = null; await loadGames(); toast('Eliminado'); }
+  else toast((await res.json()).error || 'No se pudo eliminar', true);
 }
 
 function renderList() {
@@ -333,7 +436,7 @@ async function addQuestion() {
   if (!text) { toast('Escribe la pregunta', true); return; }
   if (options.some(o => !o)) { toast('Completa las 4 opciones', true); return; }
 
-  const res = await fetch('/api/questions', {
+  const res = await fetch(`/api/games/${selectedGame}/questions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text, options, correct: selectedCorrect, time, explanation }),
@@ -377,7 +480,7 @@ async function saveEdit() {
 
   if (!text || options.some(o => !o)) { toast('Completa todos los campos', true); return; }
 
-  const res = await fetch(`/api/questions/${i}`, {
+  const res = await fetch(`/api/games/${selectedGame}/questions/${i}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text, options, correct: editSelectedCorrect, time, explanation }),
@@ -392,7 +495,7 @@ async function saveEdit() {
 // ── DELETE ──
 async function deleteQ(i) {
   if (!confirm(`¿Eliminar la pregunta "${questions[i].text.slice(0,50)}…"?`)) return;
-  const res = await fetch(`/api/questions/${i}`, { method: 'DELETE' });
+  const res = await fetch(`/api/games/${selectedGame}/questions/${i}`, { method: 'DELETE' });
   if (res.ok) { await loadQuestions(); toast('Pregunta eliminada'); }
 }
 
@@ -413,7 +516,7 @@ async function drop(e, to) {
   e.preventDefault();
   document.querySelectorAll('.q-item').forEach(el => { el.classList.remove('dragging','drag-over'); });
   if (dragSrc === null || dragSrc === to) return;
-  await fetch('/api/questions/reorder', {
+  await fetch(`/api/games/${selectedGame}/questions/reorder`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ from: dragSrc, to }),
@@ -443,7 +546,7 @@ document.getElementById('new-text').addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addQuestion(); }
 });
 
-loadQuestions();
+loadGames();
 </script>
 </body>
 </html>

@@ -616,7 +616,9 @@ function startGame() {
 }
 
 function nextQuestion() {
-  socket.emit('next-question');
+  // Mostrar el ranking unos segundos y luego avanzar.
+  showView('leaderboard-view');
+  setTimeout(() => socket.emit('next-question'), 4000);
 }
 
 function resetGame() {

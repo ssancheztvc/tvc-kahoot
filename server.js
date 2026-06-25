@@ -34,21 +34,45 @@ function requireAdmin(req, res, next) {
   return res.status(401).send('Autenticación requerida');
 }
 
-// Load questions (mutable array)
-let questions = JSON.parse(fs.readFileSync(path.join(__dirname, 'questions.json'), 'utf8'));
+const { createGameStore } = require('./lib/games');
+const { prepareQuestions } = require('./lib/shuffle');
+const { buildResult, writeResult } = require('./lib/results');
 
-function saveQuestions() {
-  fs.writeFileSync(path.join(__dirname, 'questions.json'), JSON.stringify(questions, null, 2), 'utf8');
+const store = createGameStore(__dirname);
+const RESULTS_DIR = path.join(__dirname, 'results');
+
+// Migración: si no hay juegos aún, crea games/vipday.json desde el questions.json legacy.
+(function migrateIfNeeded() {
+  const legacyPath = path.join(__dirname, 'questions.json');
+  if (store.listGames().length === 0 && fs.existsSync(legacyPath)) {
+    const legacy = JSON.parse(fs.readFileSync(legacyPath, 'utf8'));
+    store.migrateLegacy(legacy, { id: 'vipday', title: 'VIP Day' });
+    console.log('🗂️  Migrado questions.json → games/vipday.json (activo)');
+  }
+})();
+
+// Devuelve el juego activo (o uno vacío seguro si algo falla).
+function activeGame() {
+  const id = store.getActiveId();
+  try { return store.getGame(id); }
+  catch (e) {
+    console.error('No se pudo cargar el juego activo:', e.message);
+    return { id: id || null, title: 'Sin juego', shuffleQuestions: false, shuffleAnswers: false, questions: [] };
+  }
 }
 
 // Game state
 let gameState = {
-  status: 'waiting', // waiting | question | reveal | gameover
-  players: {},       // { socketId: { name, score } }
+  status: 'waiting',
+  players: {},
   currentQuestion: -1,
   questionTimer: null,
-  answers: {},       // { socketId: { answer, timeLeft } }
+  answers: {},
   timeLeft: 0,
+  gameId: null,
+  title: '',
+  runtimeQuestions: [],
+  history: [],
 };
 
 function getLocalIP() {
@@ -63,10 +87,10 @@ function getLocalIP() {
   return 'localhost';
 }
 
-// Candado: /admin, /admin.html y la API de preguntas exigen PIN
+// Candado: /admin, /admin.html y la API de juegos exigen PIN
 app.use((req, res, next) => {
   const p = req.path;
-  if (p === '/admin' || p === '/admin.html' || p.startsWith('/api/questions')) {
+  if (p === '/admin' || p === '/admin.html' || p.startsWith('/api/games')) {
     return requireAdmin(req, res, next);
   }
   next();
@@ -84,8 +108,6 @@ app.get('/api/info', (req, res) => {
 });
 
 // ── ADMIN API ──
-app.get('/api/questions', (req, res) => res.json(questions));
-
 // Normaliza y limpia una pregunta antes de guardarla
 function cleanQuestion(body) {
   if (!body || !body.text || !Array.isArray(body.options) || body.options.length !== 4) return null;
@@ -98,43 +120,84 @@ function cleanQuestion(body) {
   };
 }
 
-app.post('/api/questions', (req, res) => {
-  const q = cleanQuestion(req.body);
-  if (!q) return res.status(400).json({ error: 'Pregunta inválida' });
-  questions.push(q);
-  saveQuestions();
-  res.json({ ok: true, index: questions.length - 1 });
+// Valida formato de :id en todas las rutas de juegos (defense-in-depth)
+app.param('id', (req, res, next, id) => {
+  if (!/^[a-z0-9-]+$/.test(id)) return res.status(400).json({ error: 'id inválido' });
+  next();
 });
 
-app.put('/api/questions/:i', (req, res) => {
-  const i = parseInt(req.params.i);
-  if (i < 0 || i >= questions.length) return res.status(404).json({ error: 'No encontrada' });
-  const q = cleanQuestion(req.body);
-  if (!q) return res.status(400).json({ error: 'Pregunta inválida' });
-  questions[i] = q;
-  saveQuestions();
+// Juegos
+app.get('/api/games', (req, res) => res.json(store.listGames()));
+
+app.post('/api/games', (req, res) => {
+  const id = sanitizeText(req.body.id || '').trim();
+  const title = sanitizeText(req.body.title || '').trim();
+  if (!/^[a-z0-9-]+$/.test(id)) return res.status(400).json({ error: 'id inválido (usa minúsculas, números y guiones)' });
+  if (store.gameExists(id)) return res.status(409).json({ error: 'Ya existe un juego con ese id' });
+  store.createGame(id, title || id);
+  res.json({ ok: true, id });
+});
+
+app.put('/api/games/:id', (req, res) => {
+  if (!store.gameExists(req.params.id)) return res.status(404).json({ error: 'No encontrado' });
+  store.updateGameMeta(req.params.id, {
+    title: req.body.title != null ? sanitizeText(req.body.title) : undefined,
+    shuffleQuestions: req.body.shuffleQuestions,
+    shuffleAnswers: req.body.shuffleAnswers,
+  });
   res.json({ ok: true });
 });
 
-app.delete('/api/questions/:i', (req, res) => {
-  const i = parseInt(req.params.i);
-  if (i < 0 || i >= questions.length) return res.status(404).json({ error: 'No encontrada' });
-  questions.splice(i, 1);
-  saveQuestions();
+app.delete('/api/games/:id', (req, res) => {
+  if (!store.gameExists(req.params.id)) return res.status(404).json({ error: 'No encontrado' });
+  if (store.getActiveId() === req.params.id) return res.status(400).json({ error: 'No puedes borrar el juego activo' });
+  store.deleteGame(req.params.id);
   res.json({ ok: true });
 });
 
-app.post('/api/questions/reorder', (req, res) => {
-  const from = parseInt(req.body.from);
-  const to = parseInt(req.body.to);
-  const n = questions.length;
-  if (!Number.isInteger(from) || !Number.isInteger(to) ||
-      from < 0 || from >= n || to < 0 || to >= n) {
-    return res.status(400).json({ error: 'Índices inválidos' });
+app.post('/api/games/:id/activate', (req, res) => {
+  if (!store.gameExists(req.params.id)) return res.status(404).json({ error: 'No encontrado' });
+  if (gameState.status !== 'waiting' && gameState.status !== 'gameover') {
+    return res.status(409).json({ error: 'Hay una partida en curso' });
   }
-  const [item] = questions.splice(from, 1);
-  questions.splice(to, 0, item);
-  saveQuestions();
+  store.setActiveId(req.params.id);
+  res.json({ ok: true });
+});
+
+// Preguntas de un juego
+app.get('/api/games/:id/questions', (req, res) => {
+  if (!store.gameExists(req.params.id)) return res.status(404).json({ error: 'No encontrado' });
+  res.json(store.getGame(req.params.id).questions);
+});
+
+app.post('/api/games/:id/questions', (req, res) => {
+  if (!store.gameExists(req.params.id)) return res.status(404).json({ error: 'No encontrado' });
+  const q = cleanQuestion(req.body);
+  if (!q) return res.status(400).json({ error: 'Pregunta inválida' });
+  const index = store.addQuestion(req.params.id, q);
+  res.json({ ok: true, index });
+});
+
+app.put('/api/games/:id/questions/:i', (req, res) => {
+  if (!store.gameExists(req.params.id)) return res.status(404).json({ error: 'No encontrado' });
+  const q = cleanQuestion(req.body);
+  if (!q) return res.status(400).json({ error: 'Pregunta inválida' });
+  try { store.updateQuestion(req.params.id, parseInt(req.params.i), q); }
+  catch { return res.status(404).json({ error: 'Índice inválido' }); }
+  res.json({ ok: true });
+});
+
+app.delete('/api/games/:id/questions/:i', (req, res) => {
+  if (!store.gameExists(req.params.id)) return res.status(404).json({ error: 'No encontrado' });
+  try { store.deleteQuestion(req.params.id, parseInt(req.params.i)); }
+  catch { return res.status(404).json({ error: 'Índice inválido' }); }
+  res.json({ ok: true });
+});
+
+app.post('/api/games/:id/questions/reorder', (req, res) => {
+  if (!store.gameExists(req.params.id)) return res.status(404).json({ error: 'No encontrado' });
+  try { store.reorderQuestions(req.params.id, parseInt(req.body.from), parseInt(req.body.to)); }
+  catch { return res.status(400).json({ error: 'Índices inválidos' }); }
   res.json({ ok: true });
 });
 
@@ -155,7 +218,7 @@ function getLeaderboard() {
 
 function endQuestion() {
   clearInterval(gameState.questionTimer);
-  const q = questions[gameState.currentQuestion];
+  const q = gameState.runtimeQuestions[gameState.currentQuestion];
   const correctAnswer = q.correct;
   const maxTime = q.time || 20;
 
@@ -193,6 +256,24 @@ function endQuestion() {
     }
   }
 
+  const detail = [];
+  for (const [socketId, player] of Object.entries(gameState.players)) {
+    const a = gameState.answers[socketId];
+    detail.push({
+      name: player.name,
+      answer: a ? a.answer : null,
+      correct: a ? a.answer === correctAnswer : false,
+      timeLeft: a ? a.timeLeft : 0,
+      points: a && a.answer === correctAnswer ? calcScore(a.timeLeft, maxTime) : 0,
+    });
+  }
+  gameState.history.push({
+    index: gameState.currentQuestion,
+    text: q.text,
+    correctAnswer,
+    answers: detail,
+  });
+
   gameState.status = 'reveal';
 
   io.to('host').emit('question-ended', {
@@ -221,26 +302,33 @@ io.on('connection', (socket) => {
       status: gameState.status,
       playerCount: Object.keys(gameState.players).length,
       players: Object.values(gameState.players).map(p => p.name),
-      total: questions.length,
+      total: activeGame().questions.length,
     });
   });
 
   socket.on('start-game', () => {
     if (!authenticatedHosts.has(socket.id)) return;
     if (gameState.status !== 'waiting') return;
+    const game = activeGame();
+    if (!game.questions.length) {
+      socket.emit('host-error', 'El juego activo no tiene preguntas.');
+      return;
+    }
+    gameState.gameId = game.id;
+    gameState.title = game.title;
+    gameState.runtimeQuestions = prepareQuestions(game);
+    gameState.history = [];
     gameState.currentQuestion = -1;
     gameState.status = 'countdown';
-    io.emit('game-started', { total: questions.length });
-    // Countdown 4,3,2,1 → ¡Inicio!
+    io.emit('game-started', { total: gameState.runtimeQuestions.length });
     let count = 5;
     io.emit('countdown', { count });
     const countTimer = setInterval(() => {
       count--;
-      if (count > 0) {
-        io.emit('countdown', { count });
-      } else {
+      if (count > 0) { io.emit('countdown', { count }); }
+      else {
         clearInterval(countTimer);
-        io.emit('countdown', { count: 0 }); // "¡Inicio!"
+        io.emit('countdown', { count: 0 });
         setTimeout(() => sendNextQuestion(), 800);
       }
     }, 1000);
@@ -271,6 +359,10 @@ io.on('connection', (socket) => {
       questionTimer: null,
       answers: {},
       timeLeft: 0,
+      gameId: null,
+      title: '',
+      runtimeQuestions: [],
+      history: [],
     };
     io.emit('game-reset');
   });
@@ -294,10 +386,10 @@ io.on('connection', (socket) => {
 
     // Si el juego ya inició, manda la pregunta actual
     if (gameState.status === 'question') {
-      const q = questions[gameState.currentQuestion];
+      const q = gameState.runtimeQuestions[gameState.currentQuestion];
       socket.emit('question', {
         index: gameState.currentQuestion,
-        total: questions.length,
+        total: gameState.runtimeQuestions.length,
         text: q.text,
         options: q.options,
         time: q.time || 20,
@@ -343,12 +435,25 @@ io.on('connection', (socket) => {
 
   function sendNextQuestion() {
     gameState.currentQuestion++;
-    if (gameState.currentQuestion >= questions.length) {
+    if (gameState.currentQuestion >= gameState.runtimeQuestions.length) {
       gameState.status = 'gameover';
+      try {
+        const result = buildResult({
+          gameId: gameState.gameId,
+          title: gameState.title,
+          playedAt: new Date(),
+          leaderboard: getLeaderboard(),
+          questions: gameState.history,
+        });
+        const file = writeResult(RESULTS_DIR, result);
+        console.log('📝 Resultados guardados en', file);
+      } catch (e) {
+        console.error('No se pudieron guardar los resultados:', e.message);
+      }
       io.emit('game-over', { leaderboard: getLeaderboard() });
       return;
     }
-    const q = questions[gameState.currentQuestion];
+    const q = gameState.runtimeQuestions[gameState.currentQuestion];
     const time = q.time || 20;
     gameState.status = 'question';
     gameState.answers = {};
@@ -356,7 +461,7 @@ io.on('connection', (socket) => {
 
     io.to('host').emit('question', {
       index: gameState.currentQuestion,
-      total: questions.length,
+      total: gameState.runtimeQuestions.length,
       text: q.text,
       options: q.options,
       time,
@@ -366,7 +471,7 @@ io.on('connection', (socket) => {
 
     io.to('players').emit('question', {
       index: gameState.currentQuestion,
-      total: questions.length,
+      total: gameState.runtimeQuestions.length,
       text: q.text,
       options: q.options,
       time,

@@ -1,0 +1,67 @@
+{
+  "title": "Temporada de Campeones 2026",
+  "shuffleQuestions": true,
+  "shuffleAnswers": true,
+  "questions": [
+    {
+      "text": "¿Qué ventaja ofrece integrar paneles DSC con Securithor?",
+      "options": [
+        "Procesamiento manual de eventos",
+        "Recepción, proceso y respuesta ante las señales de los paneles",
+        "Reinicio diario del panel",
+        "Revisión local de los paneles"
+      ],
+      "correct": 1,
+      "time": 15,
+      "explanation": ""
+    },
+    {
+      "text": "¿Cómo reciben notificaciones los usuarios finales en Securithor?",
+      "options": [
+        "Correos certificados únicamente",
+        "Reporte impreso únicamente",
+        "Notificaciones Push, entre otros",
+        "Llamada programada automáticamente"
+      ],
+      "correct": 2,
+      "time": 15,
+      "explanation": ""
+    },
+    {
+      "text": "¿Qué permite la videoverificación en Securithor?",
+      "options": [
+        "Video asociado al evento",
+        "Grabación sin eventos",
+        "Solo video en vivo",
+        "Respaldo de video únicamente"
+      ],
+      "correct": 0,
+      "time": 15,
+      "explanation": ""
+    },
+    {
+      "text": "¿Para qué sirve WebOperator?",
+      "options": [
+        "Programar paneles",
+        "Reemplazar el servidor",
+        "Operar receptoras",
+        "Acceso web a cuentas"
+      ],
+      "correct": 3,
+      "time": 15,
+      "explanation": ""
+    },
+    {
+      "text": "¿Cuál es un beneficio de Securithor?",
+      "options": [
+        "Menos eventos recibidos",
+        "Mayor eficiencia operativa",
+        "Eliminar operadores",
+        "Sustituir procedimientos"
+      ],
+      "correct": 1,
+      "time": 15,
+      "explanation": ""
+    }
+  ]
+}

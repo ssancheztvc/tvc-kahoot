@@ -1,2 +1,7 @@
 node_modules/
 .DS_Store
+loadtest.js
+.superpowers/
+
+# Resultados de partidas: contienen nombres de participantes — NO versionar
+results/*.json
