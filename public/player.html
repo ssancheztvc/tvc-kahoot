@@ -236,10 +236,29 @@
   .go-score { font-size: 3rem; font-weight: 900; color: #7dd3fc; }
   .go-medal { font-size: 4rem; animation: pop .4s ease; }
 
-  /* ── THEME: futbol ── */
-  body.theme-futbol header { border-bottom-color: #2e7d32; }
-  body.theme-futbol .timer-badge { color: #34d058; }
-  body.theme-futbol #countdown-overlay { background: rgba(8,30,12,0.94); }
+  /* ── THEME: futbol (marcador de transmisión) ── */
+  body.theme-futbol {
+    --bg:#0c130f; --card:#14201a; --accent:#0c2a16;
+    background:
+      radial-gradient(circle at 50% 40%, transparent 0 120px, rgba(47,211,95,.05) 120px 122px, transparent 122px),
+      #0c130f;
+    background-attachment: fixed;
+  }
+  body.theme-futbol header {
+    border-bottom-color:#2fd35f;
+    background:linear-gradient(180deg,#0a120d,#0b150f);
+  }
+  body.theme-futbol .logo { font-style:italic; }
+  body.theme-futbol #player-name-badge { background:rgba(47,211,95,.16); }
+  body.theme-futbol .timer-badge { color:#2fd35f; font-style:italic; }
+  body.theme-futbol .question-text { background:var(--card); }
+  body.theme-futbol #countdown-overlay { background:rgba(8,20,12,0.95); }
+  body.theme-futbol #countdown-overlay::before {
+    content:"⚽"; font-size:3rem; display:block; margin-bottom:4px;
+    animation:roll 2.4s linear infinite;
+  }
+  @keyframes roll { to { transform:rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { body.theme-futbol #countdown-overlay::before { animation:none; } }
 </style>
 </head>
 <body>
@@ -327,10 +346,9 @@ let totalTime = 20;
 let THEME = '';
 const THEMES = {
   futbol: {
-    countdownLabel: 'SALTAN A LA CANCHA',
     go: '¡ARRANCA!',
     gameover: '¡Final del partido!',
-    waiting: 'Esperando el silbatazo inicial…',
+    waiting: 'Esperando que comience el partido…',
   },
 };
 function t(key, fallback) {

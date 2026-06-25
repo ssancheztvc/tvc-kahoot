@@ -281,12 +281,36 @@
   .btn-danger  { background: linear-gradient(135deg, #e21b3c, #b01530); box-shadow: 0 4px 16px rgba(226,27,60,0.4); }
   .btn-ghost   { background: rgba(255,255,255,0.1); }
 
-  /* ── THEME: futbol ── */
-  body.theme-futbol header { border-bottom-color: #2e7d32; }
-  body.theme-futbol .badge { background: rgba(46,125,50,0.25); }
-  body.theme-futbol .player-counter .num,
-  body.theme-futbol .join-url { color: #34d058; }
-  body.theme-futbol #countdown-overlay { background: rgba(8,30,12,0.93); }
+  /* ── THEME: futbol (marcador de transmisión) ── */
+  body.theme-futbol {
+    --bg:#0c130f; --card:#14201a; --accent:#0c2a16;
+    background:
+      radial-gradient(circle at 50% 44%, transparent 0 150px, rgba(47,211,95,.06) 150px 152px, transparent 152px),
+      linear-gradient(90deg, transparent 49.9%, rgba(47,211,95,.05) 50%, transparent 50.1%),
+      #0c130f;
+    background-attachment: fixed;
+  }
+  body.theme-futbol header {
+    border-bottom-color:#2fd35f;
+    background:linear-gradient(180deg,#0a120d,#0b150f);
+  }
+  body.theme-futbol .logo { font-style:italic; letter-spacing:.01em; }
+  body.theme-futbol .badge { background:rgba(47,211,95,.14); border:1px solid rgba(47,211,95,.3); }
+  body.theme-futbol .player-counter { background:rgba(0,0,0,.28); }
+  body.theme-futbol .player-counter .num { color:#2fd35f; font-style:italic; }
+  body.theme-futbol #start-btn {
+    background:linear-gradient(135deg,#2fd35f,#1c8b40); color:#04210f;
+    font-style:italic; text-transform:uppercase; letter-spacing:.02em;
+    box-shadow:0 6px 24px rgba(47,211,95,.35);
+  }
+  body.theme-futbol .q-text { background:var(--card); border:1px solid rgba(47,211,95,.16); }
+  body.theme-futbol #countdown-overlay { background:rgba(8,20,12,0.94); }
+  body.theme-futbol #countdown-overlay::before {
+    content:"⚽"; font-size:4.2rem; display:block; margin-bottom:6px;
+    animation:roll 2.4s linear infinite;
+  }
+  @keyframes roll { to { transform:rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { body.theme-futbol #countdown-overlay::before { animation:none; } }
 </style>
 </head>
 <body>
@@ -399,8 +423,6 @@ let timerCircumference = 213.6;
 let THEME = '';
 const THEMES = {
   futbol: {
-    startBtn: '⚽ Pitazo inicial',
-    countdownLabel: 'SALTAN A LA CANCHA',
     go: '¡ARRANCA!',
     lbTitle: '🏆 Tabla de posiciones',
     gameover: '🏆 ¡Final del partido!',
