@@ -375,11 +375,12 @@ async function renameGame() {
   const g = games.find(x => x.id === selectedGame);
   const title = prompt('Nuevo nombre:', g ? g.title : '');
   if (!title) return;
-  await fetch(`/api/games/${selectedGame}`, {
+  const res = await fetch(`/api/games/${selectedGame}`, {
     method: 'PUT', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ title }),
   });
-  await loadGames(); toast('Renombrado ✓');
+  if (res.ok) { await loadGames(); toast('Renombrado ✓'); }
+  else toast((await res.json()).error || 'No se pudo renombrar', true);
 }
 
 async function deleteGame() {
