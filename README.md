@@ -14,6 +14,7 @@ Quiz estilo Kahoot para eventos de TVC. Un juego activo a la vez.
 ```json
 {
   "title": "Nombre visible del evento",
+  "theme": "futbol",
   "shuffleQuestions": true,
   "shuffleAnswers": true,
   "questions": [
@@ -32,6 +33,20 @@ Quiz estilo Kahoot para eventos de TVC. Un juego activo a la vez.
   No te preocupes por el orden: si `shuffleAnswers` está activo, el servidor baraja
   las opciones en cada partida y recalcula cuál es la correcta.
 - `time` entre 5 y 120 segundos.
+
+### Temas por juego (`theme`)
+
+- El **logo de las pantallas (Host y Jugador) siempre muestra el `title` del juego
+  activo** — ya no dice "TVC Kahoot". Con VIP Day activo dice "VIP Day 2026", etc.
+- El campo opcional `theme` aplica un estilo extra **solo cuando ese juego está
+  activo**. Sin `theme` (o `""`) = diseño base.
+- Theme disponible: `"futbol"` — acento verde "cancha" y copys futboleros
+  ("Pitazo inicial", "SALTAN A LA CANCHA / ¡ARRANCA!", "🏆 Tabla de posiciones",
+  "🏆 ¡Final del partido!", "Esperando el silbatazo inicial…").
+- Las pantallas leen el nombre y el theme del juego activo vía `GET /api/info`.
+- Para crear un theme nuevo: agrega un bloque en el objeto `THEMES` de
+  `public/host.html` y `public/player.html` (y su CSS `body.theme-<nombre>`), luego
+  pon `"theme": "<nombre>"` en el juego que lo use.
 
 ## Agregar un evento nuevo (con Claude Code)
 

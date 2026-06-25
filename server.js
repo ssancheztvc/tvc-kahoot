@@ -57,7 +57,7 @@ function activeGame() {
   try { return store.getGame(id); }
   catch (e) {
     console.error('No se pudo cargar el juego activo:', e.message);
-    return { id: id || null, title: 'Sin juego', shuffleQuestions: false, shuffleAnswers: false, questions: [] };
+    return { id: id || null, title: 'Sin juego', theme: '', shuffleQuestions: false, shuffleAnswers: false, questions: [] };
   }
 }
 
@@ -104,7 +104,8 @@ app.get('/api/info', (req, res) => {
   const host = req.headers['x-forwarded-host'] || req.headers.host || `${getLocalIP()}:${PORT}`;
   const proto = req.headers['x-forwarded-proto'] || 'http';
   const base = `${proto}://${host}`;
-  res.json({ url: `${base}/play` });
+  const g = activeGame();
+  res.json({ url: `${base}/play`, title: g.title, theme: g.theme || '' });
 });
 
 // ── ADMIN API ──

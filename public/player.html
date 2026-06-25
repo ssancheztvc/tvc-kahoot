@@ -235,12 +235,17 @@
   .go-rank { font-size: 1rem; opacity: 0.8; }
   .go-score { font-size: 3rem; font-weight: 900; color: #7dd3fc; }
   .go-medal { font-size: 4rem; animation: pop .4s ease; }
+
+  /* ── THEME: futbol ── */
+  body.theme-futbol header { border-bottom-color: #2e7d32; }
+  body.theme-futbol .timer-badge { color: #34d058; }
+  body.theme-futbol #countdown-overlay { background: rgba(8,30,12,0.94); }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="logo">TVC<span>.</span>Kahoot</div>
+  <div class="logo" id="app-logo">TVC<span>.</span>Kahoot</div>
   <div id="player-name-badge"></div>
 </header>
 
@@ -318,6 +323,35 @@ let myName = '';
 let myScore = 0;
 let totalTime = 20;
 
+// ── THEME ──
+let THEME = '';
+const THEMES = {
+  futbol: {
+    countdownLabel: 'SALTAN A LA CANCHA',
+    go: '¡ARRANCA!',
+    gameover: '¡Final del partido!',
+    waiting: 'Esperando el silbatazo inicial…',
+  },
+};
+function t(key, fallback) {
+  return (THEMES[THEME] && THEMES[THEME][key]) || fallback;
+}
+function applyInfo(info) {
+  if (info.title) {
+    document.getElementById('app-logo').textContent = info.title;
+    document.title = info.title;
+  }
+  THEME = info.theme || '';
+  if (THEMES[THEME]) {
+    document.body.classList.add('theme-' + THEME);
+    const goTitle = document.querySelector('.go-title');
+    if (goTitle) goTitle.textContent = t('gameover', '¡Fin del juego!');
+    const wmsg = document.querySelector('.waiting-msg');
+    if (wmsg) wmsg.textContent = t('waiting', 'Esperando que el juego inicie…');
+  }
+}
+fetch('/api/info').then(r => r.json()).then(applyInfo).catch(() => {});
+
 function showView(id) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -352,13 +386,13 @@ socket.on('countdown', ({ count }) => {
   const lbl = document.getElementById('countdown-label');
   overlay.classList.add('show');
   if (count === 0) {
-    num.textContent = '¡YA!';
+    num.textContent = t('go', '¡YA!');
     num.style.color = '#26890c';
     lbl.textContent = '';
   } else {
     num.textContent = count;
     num.style.color = count <= 2 ? '#e21b3c' : '#7dd3fc';
-    lbl.textContent = 'PREPÁRENSE';
+    lbl.textContent = t('countdownLabel', 'PREPÁRENSE');
     num.style.animation = 'none';
     num.offsetHeight;
     num.style.animation = 'countPop .4s ease';
