@@ -182,6 +182,66 @@
       "correct": 0,
       "time": 30,
       "explanation": ""
+    },
+    {
+      "text": "⚽ ¿Cómo se le conoce popularmente a la Selección Mexicana de futbol?",
+      "options": [
+        "La Albiceleste",
+        "El Tri",
+        "La Canarinha",
+        "La Roja"
+      ],
+      "correct": 1,
+      "time": 15,
+      "explanation": "Se le conoce como El Tri (o El Tricolor), por los colores de la bandera."
+    },
+    {
+      "text": "⚽ ¿En qué estadio juega tradicionalmente como local la Selección Mexicana?",
+      "options": [
+        "Estadio BBVA",
+        "Estadio Akron",
+        "Estadio Azteca",
+        "Estadio Universitario"
+      ],
+      "correct": 2,
+      "time": 15,
+      "explanation": "El Estadio Azteca es la casa histórica de la Selección Mexicana."
+    },
+    {
+      "text": "⚽ ¿En qué años ha sido México sede de la Copa del Mundo?",
+      "options": [
+        "1970 y 1986",
+        "1986 y 1994",
+        "1978 y 1986",
+        "1970 y 1994"
+      ],
+      "correct": 0,
+      "time": 20,
+      "explanation": "México fue sede en 1970 y 1986 (y será co-sede en 2026)."
+    },
+    {
+      "text": "⚽ ¿Qué medalla ganó México en el futbol varonil de los Juegos Olímpicos de Londres 2012?",
+      "options": [
+        "Plata",
+        "Bronce",
+        "Oro",
+        "No subió al podio"
+      ],
+      "correct": 2,
+      "time": 15,
+      "explanation": "México ganó el Oro al vencer a Brasil 2-1 en la final."
+    },
+    {
+      "text": "⚽ ¿Quién es el máximo goleador histórico de la Selección Mexicana?",
+      "options": [
+        "Hugo Sánchez",
+        "Cuauhtémoc Blanco",
+        "Rafael Márquez",
+        "Javier 'Chicharito' Hernández"
+      ],
+      "correct": 3,
+      "time": 15,
+      "explanation": "Javier 'Chicharito' Hernández es el máximo goleador histórico del Tri."
     }
   ]
 }
